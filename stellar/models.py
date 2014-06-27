@@ -11,3 +11,10 @@ class Snapshot(Base):
     project_name = sa.Column(sa.String(255), nullable=False)
     name = sa.Column(sa.String(255), nullable=False)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    is_slave_ready = sa.Column(sa.Boolean, default=False)
+
+    def __repr__(self):
+        return "Snapshot(table_name=%r, name=%r)" % (
+            self.table_name,
+            self.name
+        )

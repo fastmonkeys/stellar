@@ -3,6 +3,7 @@ import sys
 import hashlib
 import uuid
 import os
+import sys
 
 from database import *
 from config import config
@@ -64,8 +65,9 @@ class CommandApp(object):
         print "Snapshotting tracked databases: %s" % ', '.join(
             config['tracked_databases']
         )
-        table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
+
         for table_name in config['tracked_databases']:
+            table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
             copy_database(table_name, 'stellar_%s_master' % table_hash)
             snapshot = Snapshot(
                 table_name=table_name,
@@ -79,7 +81,13 @@ class CommandApp(object):
             return
 
         for table_name in config['tracked_databases']:
-            copy_database(table_name, 'stellar_%s_slave' % table_hash)
+            snapshot = stellar_db.session.query(Snapshot).filter(
+                Snapshot.table_name == table_name,
+                Snapshot.name == args.name,
+            ).one()
+            copy_database(table_name, 'stellar_%s_slave' % snapshot.table_hash)
+            snapshot.is_slave_ready = True
+            stellar_db.session.commit()
 
 
     def restore(self):
@@ -90,24 +98,35 @@ class CommandApp(object):
         args = parser.parse_args(sys.argv[2:])
 
         if not args.name:
-            table_hash = stellar_db.session.query(Snapshot).filter(
+            name = stellar_db.session.query(Snapshot).filter(
                 Snapshot.project_name == config['project_name']
-            ).order_by(Snapshot.created_at.desc()).limit(1).one().table_hash
+            ).order_by(Snapshot.created_at.desc()).limit(1).one().name
         else:
-            table_hash = stellar_db.session.query(Snapshot).filter(
-                Snapshot.project_name == config['project_name'],
-                Snapshot.name == args.name
-            ).one().table_hash
+            name = args.name
+
+        # Check if slaves are ready
+        for snapshot in stellar_db.session.query(Snapshot).filter(
+            Snapshot.name == name,
+            Snapshot.project_name == config['project_name']
+        ):
+            if not snapshot.is_slave_ready:
+                print "Slave for %s is not ready" % (
+                    snapshot.table_name
+                )
+                sys.exit(1)
 
         for snapshot in stellar_db.session.query(Snapshot).filter(
-                Snapshot.table_hash == table_hash
+            Snapshot.name == name,
+            Snapshot.project_name == config['project_name']
         ):
             print "Restoring %s" % snapshot.table_name
             remove_database(snapshot.table_name)
             rename_database(
-                'stellar_%s_slave' % table_hash,
+                'stellar_%s_slave' % snapshot.table_hash,
                 snapshot.table_name
             )
+            snapshot.is_slave_ready = False
+            db.session.commit()
 
         print "Restore complete."
 
@@ -115,12 +134,15 @@ class CommandApp(object):
             return
 
         for snapshot in stellar_db.session.query(Snapshot).filter(
-                Snapshot.table_hash == table_hash
+            Snapshot.name == name,
+            Snapshot.project_name == config['project_name']
         ):
             copy_database(
-                'stellar_%s_master' % table_hash,
-                'stellar_%s_slave' % table_hash
+                'stellar_%s_master' % snapshot.table_hash,
+                'stellar_%s_slave' % snapshot.table_hash
             )
+            snapshot.is_slave_ready = True
+            stellar_db.session.commit()
 
 
 if __name__ == '__main__':

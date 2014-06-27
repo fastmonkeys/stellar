@@ -1,2 +1,3 @@
 PyYAML==3.11
 SQLAlchemy==0.9.6
+humanize==0.5

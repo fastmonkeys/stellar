@@ -106,7 +106,7 @@ class CommandApp(object):
             for s in stellar_db.session.query(
                 Snapshot
             ).order_by(
-                Snapshot.created_at
+                Snapshot.created_at.desc()
             ).all()
         )
 
@@ -175,21 +175,29 @@ class CommandApp(object):
         args = parser.parse_args(sys.argv[2:])
 
         if not args.name:
-            snapshot = stellar_db.session.query(Snapshot).filter(
+            snapshots = stellar_db.session.query(Snapshot).filter(
                 Snapshot.project_name == config['project_name']
-            ).order_by(Snapshot.created_at.desc()).limit(1).one()
+            ).order_by(Snapshot.created_at.desc())
         else:
-            snapshot = stellar_db.session.query(Snapshot).filter(
+            snapshots = stellar_db.session.query(Snapshot).filter(
                 Snapshot.project_name == config['project_name'],
                 Snapshot.name == args.name
-            ).one()
+            )
+        if not snapshots.count():
+            print "Couldn't find snapshot %s" % args.name
+            return
 
-        print "Deleting snapshot %s" % snapshot.name
-        try:
-            remove_database('stellar_%s_slave' % snapshot.table_hash)
-        except ProgrammingError:
-            pass
-        stellar_db.session.delete(snapshot)
+        print "Deleting snapshot %s" % args.name
+        for table_hash in (s.table_hash for s in snapshots):
+            try:
+                remove_database('stellar_%s_master' % table_hash)
+            except ProgrammingError:
+                pass
+            try:
+                remove_database('stellar_%s_slave' % table_hash)
+            except ProgrammingError:
+                pass
+        snapshots.delete()
         stellar_db.session.commit()
         print "Deleted"
 

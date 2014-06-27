@@ -26,4 +26,3 @@ for k, v in default_config.items():
 
 if not 'tracked_databases' in config:
     raise Exception('Configuration variable tracked_databases is not set.')
-

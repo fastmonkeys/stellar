@@ -31,7 +31,7 @@ if __name__ == '__main__':
     #
     # stellar
     # 1. Snapshot current database
-    # stellar snapshot --branch
-    # stellar rollback --branch
+    # stellar snapshot <name> (--git)
+    # stellar rollback <name> (--git)
     # stellar list
     # stellar remove

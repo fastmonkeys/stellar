@@ -4,8 +4,9 @@ import hashlib
 import uuid
 import os
 
-from database import *
 from config import config
+from database import *
+from datetime import datetime
 from models import Snapshot
 from operations import (
     create_stellar_tables,
@@ -13,6 +14,7 @@ from operations import (
     remove_database,
     rename_database
 )
+import humanize
 
 
 class CommandApp(object):
@@ -53,7 +55,6 @@ class CommandApp(object):
                 print "Removing %s" % database
         print "Garbage collection complete"
 
-
     def snapshot(self):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
@@ -81,6 +82,22 @@ class CommandApp(object):
         for table_name in config['tracked_databases']:
             copy_database(table_name, 'stellar_%s_slave' % table_hash)
 
+    def list(self):
+        argparse.ArgumentParser(
+            description='List snapshots'
+        )
+
+        print '\n'.join(
+            '%s %s ago' % (
+                s.name,
+                humanize.naturaltime(datetime.utcnow() - s.created_at)
+            )
+            for s in stellar_db.session.query(
+                Snapshot
+            ).order_by(
+                Snapshot.created_at
+            ).all()
+        )
 
     def restore(self):
         parser = argparse.ArgumentParser(

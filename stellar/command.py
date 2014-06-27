@@ -8,7 +8,7 @@ import sys
 from sqlalchemy.exc import ProgrammingError
 
 from config import config
-from database import stellar_db, db as weird_db
+from database import stellar_db, db
 from datetime import datetime
 from models import Snapshot
 from operations import (
@@ -35,7 +35,7 @@ class CommandApp(object):
         getattr(self, args.command)()
 
     def list_of_tables(self):
-        for row in weird_db.execute('''
+        for row in db.execute('''
             SELECT datname FROM pg_database
             WHERE datistemplate = false
         '''):

@@ -64,7 +64,9 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
-        parser.add_argument('name', default='')
+        parser.add_argument('name', nargs='?', default=(
+            '%s' % stellar_db.session.query(Snapshot).count()
+        ))
         args = parser.parse_args(sys.argv[2:])
 
         print "Snapshotting tracked databases: %s" % ', '.join(

@@ -4,6 +4,7 @@ import hashlib
 import uuid
 import os
 import sys
+from time import sleep
 
 from sqlalchemy.exc import ProgrammingError
 
@@ -130,10 +131,14 @@ class CommandApp(object):
             Snapshot.project_name == config['project_name']
         ):
             if not snapshot.is_slave_ready:
-                print "Slave for %s is not ready" % (
-                    snapshot.table_name
-                )
-                sys.exit(1)
+                sys.stdout.write('Waiting for background process to finish')
+                sys.stdout.flush()
+                while not snapshot.is_slave_ready:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+                    sleep(1)
+                    stellar_db.session.refresh(snapshot)
+                print ''
 
         for snapshot in stellar_db.session.query(Snapshot).filter(
             Snapshot.name == name,

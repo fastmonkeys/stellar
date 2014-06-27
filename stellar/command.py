@@ -2,6 +2,7 @@ import argparse
 import sys
 import hashlib
 import uuid
+import os
 
 from database import *
 from config import config
@@ -33,7 +34,6 @@ class CommandApp(object):
         table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
         for table_name in config['tracked_databases']:
             copy_database(table_name, 'stellar_%s_primary' % table_hash)
-            copy_database(table_name, 'stellar_%s_slave' % table_hash)
             snapshot = Snapshot(
                 table_name=table_name,
                 table_hash=table_hash,
@@ -42,6 +42,11 @@ class CommandApp(object):
             )
             stellar_db.session.add(snapshot)
         stellar_db.session.commit()
+        if os.fork():
+            return
+
+        for table_name in config['tracked_databases']:
+            copy_database(table_name, 'stellar_%s_slave' % table_hash)
 
 
 if __name__ == '__main__':

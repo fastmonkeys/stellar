@@ -1,8 +1,12 @@
 import argparse
 import sys
+import hashlib
+import uuid
 
 from database import *
-from operations import create_stellar_tables
+from config import config
+from models import Snapshot
+from operations import create_stellar_tables, copy_database
 
 
 class CommandApp(object):
@@ -22,9 +26,22 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
-        parser.add_argument('--amend', action='store_true')
+        parser.add_argument('name')
         args = parser.parse_args(sys.argv[2:])
-        print "Snapshot"
+
+        print "Snapshotting tracked databases: %s" % ', '.join(config['tracked_databases'])
+        table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
+        for table_name in config['tracked_databases']:
+            copy_database(table_name, 'stellar_%s_primary' % table_hash)
+            copy_database(table_name, 'stellar_%s_slave' % table_hash)
+            snapshot = Snapshot(
+                table_name=table_name,
+                table_hash=table_hash,
+                project_name=config['project_name'],
+                name=args.name
+            )
+            stellar_db.session.add(snapshot)
+        stellar_db.session.commit()
 
 
 if __name__ == '__main__':

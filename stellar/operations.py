@@ -4,12 +4,16 @@ from models import Snapshot
 
 def create_stellar_tables():
     try:
+        print "Creating database"
         raw_connection.execute('''
             CREATE DATABASE "stellar_data"
         ''')
     except ProgrammingError:
+        print "...already created"
         return False
-    create_stellar_tables()
+    print "Create all"
+    Base.metadata.create_all(stellar_db)
+    stellar_db.session.commit()
     return True
 
 

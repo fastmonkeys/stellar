@@ -20,9 +20,10 @@ while True:
     if current_directory == '/':
         raise Exception('stellar.yaml not found')
 
+for name in ['tracked_databases', 'project_name']:
+    if not config or not name in config:
+        raise Exception('Configuration variable %s is not set.' % name)
+
 for k, v in default_config.items():
     if k not in config:
         config[k] = v
-
-if not 'tracked_databases' in config:
-    raise Exception('Configuration variable tracked_databases is not set.')

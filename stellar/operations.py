@@ -4,14 +4,11 @@ from database import stellar_db, Base, raw_connection
 
 def create_stellar_tables():
     try:
-        print "Creating database"
         raw_connection.execute('''
             CREATE DATABASE "stellar_data"
         ''')
     except ProgrammingError:
-        print "...already created"
         return False
-    print "Create all"
     Base.metadata.create_all(stellar_db)
     stellar_db.session.commit()
     return True
@@ -58,7 +55,8 @@ def remove_database(database):
     raw_connection.execute(
         '''
             DROP DATABASE "%s"
-        ''' % (
+        ''' %
+        (
             database
         )
     )

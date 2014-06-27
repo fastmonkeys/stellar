@@ -5,8 +5,11 @@ import uuid
 import os
 import sys
 
-from database import *
+from sqlalchemy.exc import ProgrammingError
+
 from config import config
+from database import *
+from datetime import datetime
 from models import Snapshot
 from operations import (
     create_stellar_tables,
@@ -14,6 +17,7 @@ from operations import (
     remove_database,
     rename_database
 )
+import humanize
 
 
 class CommandApp(object):
@@ -54,7 +58,6 @@ class CommandApp(object):
                 print "Removing %s" % database
         print "Garbage collection complete"
 
-
     def snapshot(self):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
@@ -89,6 +92,22 @@ class CommandApp(object):
             snapshot.is_slave_ready = True
             stellar_db.session.commit()
 
+    def list(self):
+        argparse.ArgumentParser(
+            description='List snapshots'
+        )
+
+        print '\n'.join(
+            '%s %s ago' % (
+                s.name,
+                humanize.naturaltime(datetime.utcnow() - s.created_at)
+            )
+            for s in stellar_db.session.query(
+                Snapshot
+            ).order_by(
+                Snapshot.created_at
+            ).all()
+        )
 
     def restore(self):
         parser = argparse.ArgumentParser(
@@ -143,6 +162,32 @@ class CommandApp(object):
             )
             snapshot.is_slave_ready = True
             stellar_db.session.commit()
+
+    def remove(self):
+        parser = argparse.ArgumentParser(
+            description='Removes spesified snapshot'
+        )
+        parser.add_argument('name', default='')
+        args = parser.parse_args(sys.argv[2:])
+
+        if not args.name:
+            snapshot = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name']
+            ).order_by(Snapshot.created_at.desc()).limit(1).one()
+        else:
+            snapshot = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name'],
+                Snapshot.name == args.name
+            ).one()
+
+        print "Deleting snapshot %s" % snapshot.name
+        try:
+            remove_database('stellar_%s_slave' % snapshot.table_hash)
+        except ProgrammingError:
+            pass
+        stellar_db.session.delete(snapshot)
+        stellar_db.session.commit()
+        print "Deleted"
 
 
 if __name__ == '__main__':

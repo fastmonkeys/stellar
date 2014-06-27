@@ -2,8 +2,8 @@ import os
 import yaml
 
 default_config = {
-    'stellar_database': 'stellar_data',
-    'url': 'postgresql://teemu:@localhost:5432/',
+    'stellar_url': 'postgresql://localhost:5432/stellar_data',
+    'url': 'postgresql://localhost:5432/',
     'tracked_databases': ['pelsu']
 }
 
@@ -26,3 +26,4 @@ for k, v in default_config.items():
 
 if not 'tracked_databases' in config:
     raise Exception('Configuration variable tracked_databases is not set.')
+

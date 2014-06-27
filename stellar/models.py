@@ -1,10 +1,9 @@
 import sqlalchemy as sa
-import datetime
+from datetime import datetime
 
 from sqlalchemy.orm import relationship, backref
 from decimal import Decimal
 from database import Base, db
-
 
 class Snapshot(Base):
     __tablename__ = 'snapshot'

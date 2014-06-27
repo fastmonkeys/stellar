@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from database import *
+from operations import create_stellar_tables
 
 
 class CommandApp(object):
@@ -27,6 +28,7 @@ class CommandApp(object):
 
 
 if __name__ == '__main__':
+    create_stellar_tables()
     CommandApp()
     #
     # stellar

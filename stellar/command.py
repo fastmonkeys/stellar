@@ -7,7 +7,7 @@ import os
 from database import *
 from config import config
 from models import Snapshot
-from operations import create_stellar_tables, copy_database
+from operations import create_stellar_tables, copy_database, remove_database
 
 
 class CommandApp(object):
@@ -22,6 +22,25 @@ class CommandApp(object):
             parser.print_help()
             exit(1)
         getattr(self, args.command)()
+
+    def gc(self):
+        databases = set()
+        stellar_databases = set()
+        for snapshot in stellar_db.session.query(Snapshot):
+            stellar_databases.add(snapshot.table_name)
+
+        for row in db.execute('''
+            SELECT datname FROM pg_database
+            WHERE datistemplate = false
+        '''):
+            databases.add(row[0])
+
+        for database in (databases-stellar_databases):
+            if database.startswith('stellar_') and database != 'stellar_data':
+                remove_database(database)
+                print "Removing %s" % database
+        print "Garbage collection complete"
+
 
     def snapshot(self):
         parser = argparse.ArgumentParser(

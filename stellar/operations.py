@@ -39,7 +39,7 @@ def rename_database(from_database, to_database):
     )
 
 
-def rename_database(database):
+def remove_database(database):
     raw_connection.execute(
         '''
             DROP DATABASE "%s"

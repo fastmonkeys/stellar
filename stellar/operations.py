@@ -55,7 +55,8 @@ def remove_database(database):
     raw_connection.execute(
         '''
             DROP DATABASE "%s"
-        ''' % (
+        ''' %
+        (
             database
         )
     )

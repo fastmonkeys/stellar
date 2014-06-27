@@ -4,6 +4,8 @@ import hashlib
 import uuid
 import os
 
+from sqlalchemy.exc import ProgrammingError
+
 from config import config
 from database import *
 from datetime import datetime
@@ -138,6 +140,32 @@ class CommandApp(object):
                 'stellar_%s_master' % table_hash,
                 'stellar_%s_slave' % table_hash
             )
+
+    def remove(self):
+        parser = argparse.ArgumentParser(
+            description='Removes spesified snapshot'
+        )
+        parser.add_argument('name', default='')
+        args = parser.parse_args(sys.argv[2:])
+
+        if not args.name:
+            snapshot = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name']
+            ).order_by(Snapshot.created_at.desc()).limit(1).one()
+        else:
+            snapshot = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name'],
+                Snapshot.name == args.name
+            ).one()
+
+        print "Deleting snapshot %s" % snapshot.name
+        try:
+            remove_database('stellar_%s_slave' % snapshot.table_hash)
+        except ProgrammingError:
+            pass
+        stellar_db.session.delete(snapshot)
+        stellar_db.session.commit()
+        print "Deleted"
 
 
 if __name__ == '__main__':

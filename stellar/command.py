@@ -7,7 +7,12 @@ import os
 from database import *
 from config import config
 from models import Snapshot
-from operations import create_stellar_tables, copy_database, remove_database
+from operations import (
+    create_stellar_tables,
+    copy_database,
+    remove_database,
+    rename_database
+)
 
 
 class CommandApp(object):
@@ -22,6 +27,13 @@ class CommandApp(object):
             parser.print_help()
             exit(1)
         getattr(self, args.command)()
+
+    def list_of_tables(self):
+        for row in db.execute('''
+            SELECT datname FROM pg_database
+            WHERE datistemplate = false
+        '''):
+            print row[0]
 
     def gc(self):
         databases = set()
@@ -46,18 +58,20 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
-        parser.add_argument('name')
+        parser.add_argument('name', default='')
         args = parser.parse_args(sys.argv[2:])
 
-        print "Snapshotting tracked databases: %s" % ', '.join(config['tracked_databases'])
+        print "Snapshotting tracked databases: %s" % ', '.join(
+            config['tracked_databases']
+        )
         table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
         for table_name in config['tracked_databases']:
-            copy_database(table_name, 'stellar_%s_primary' % table_hash)
+            copy_database(table_name, 'stellar_%s_master' % table_hash)
             snapshot = Snapshot(
                 table_name=table_name,
                 table_hash=table_hash,
                 project_name=config['project_name'],
-                name=args.name
+                name=args.name,
             )
             stellar_db.session.add(snapshot)
         stellar_db.session.commit()
@@ -66,6 +80,47 @@ class CommandApp(object):
 
         for table_name in config['tracked_databases']:
             copy_database(table_name, 'stellar_%s_slave' % table_hash)
+
+
+    def restore(self):
+        parser = argparse.ArgumentParser(
+            description='Take a snapshot of the database'
+        )
+        parser.add_argument('name', nargs='?')
+        args = parser.parse_args(sys.argv[2:])
+
+        if not args.name:
+            table_hash = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name']
+            ).order_by(Snapshot.created_at.desc()).limit(1).one().table_hash
+        else:
+            table_hash = stellar_db.session.query(Snapshot).filter(
+                Snapshot.project_name == config['project_name'],
+                Snapshot.name == args.name
+            ).one().table_hash
+
+        for snapshot in stellar_db.session.query(Snapshot).filter(
+                Snapshot.table_hash == table_hash
+        ):
+            print "Restoring %s" % snapshot.table_name
+            remove_database(snapshot.table_name)
+            rename_database(
+                'stellar_%s_slave' % table_hash,
+                snapshot.table_name
+            )
+
+        print "Restore complete."
+
+        if os.fork():
+            return
+
+        for snapshot in stellar_db.session.query(Snapshot).filter(
+                Snapshot.table_hash == table_hash
+        ):
+            copy_database(
+                'stellar_%s_master' % table_hash,
+                'stellar_%s_slave' % table_hash
+            )
 
 
 if __name__ == '__main__':

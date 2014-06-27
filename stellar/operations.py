@@ -39,6 +39,20 @@ def copy_database(from_database, to_database):
     )
 
 
+def database_exists(database):
+    return raw_connection.execute(
+        '''
+            SELECT COUNT(*)
+            FROM pg_database
+            WHERE
+            datistemplate is false AND
+            datname = '%s';
+        ''' %
+        (
+            database
+        )
+    ).first()[0] > 0
+
 def rename_database(from_database, to_database):
     raw_connection.execute(
         '''

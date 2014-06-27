@@ -15,7 +15,8 @@ from operations import (
     create_stellar_tables,
     copy_database,
     remove_database,
-    rename_database
+    rename_database,
+    database_exists
 )
 import humanize
 
@@ -139,6 +140,9 @@ class CommandApp(object):
             Snapshot.project_name == config['project_name']
         ):
             print "Restoring %s" % snapshot.table_name
+            if not database_exists('stellar_%s_slave' % snapshot.table_hash):
+                print "Database stellar_%s_slave does not exist."
+                sys.exit(1)
             remove_database(snapshot.table_name)
             rename_database(
                 'stellar_%s_slave' % snapshot.table_hash,

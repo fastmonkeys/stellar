@@ -27,7 +27,11 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Lightning fast database snapshotting for development',
         )
-        parser.add_argument('command', help='Subcommand to run')
+        parser.add_argument(
+            'command',
+            help='Subcommand to run',
+            choices=[unicode(x) for x in dir(self) if not x.startswith('_')],
+        )
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
             print 'Unrecognized command'

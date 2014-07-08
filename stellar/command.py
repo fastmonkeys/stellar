@@ -152,7 +152,10 @@ class CommandApp(object):
         ):
             print "Restoring %s" % snapshot.table_name
             if not database_exists('stellar_%s_slave' % snapshot.table_hash):
-                print "Database stellar_%s_slave does not exist."
+                print (
+                    "Database stellar_%s_slave does not exist."
+                    % snapshot.table_hash
+                )
                 sys.exit(1)
             remove_database(snapshot.table_name)
             rename_database(

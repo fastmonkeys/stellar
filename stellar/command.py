@@ -43,7 +43,7 @@ class CommandApp(object):
         app = Stellar()
         name = args.name or app.default_snapshot_name
 
-        if app.get_snapshot(args.name):
+        if app.get_snapshot(name):
             print "Snapshot with name %s already exists" % name
             exit(1)
         else:

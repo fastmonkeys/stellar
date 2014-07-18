@@ -16,7 +16,6 @@ class Stellar(object):
         self.raw_db = create_engine(config['url'], echo=False)
         self.raw_conn = self.db.connect()
         self.raw_conn.connection.set_isolation_level(0)
-        self.base = declarative_base()
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
 

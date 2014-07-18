@@ -1,8 +1,11 @@
 import sqlalchemy as sa
 from datetime import datetime
-from database import Base
 import uuid
 import hashlib
+from sqlalchemy.ext.declarative import declarative_base
+
+
+Base = declarative_base()
 
 
 def get_unique_hash():
@@ -25,11 +28,11 @@ class Snapshot(Base):
 
 
 class Table(Base):
-    __tablename__ = 'snapshot'
+    __tablename__ = 'table'
     id = sa.Column(sa.Integer, sa.Sequence('table_id_seq'), primary_key=True)
     table_name = sa.Column(sa.String(255), nullable=False)
-    snapshot_id = sa.Column(sa.Integer, db.ForeignKey(Snapshot.id), nullable=False)
-    snapshot = sa.relationship(Snapshot, backref='tables')
+    snapshot_id = sa.Column(sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False)
+    snapshot = sa.orm.relationship(Snapshot, backref='tables')
     slave_pid = sa.Column(sa.Integer, nullable=True)
 
     def get_table_name(self, postfix):

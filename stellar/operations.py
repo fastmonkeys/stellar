@@ -1,5 +1,4 @@
 from sqlalchemy.exc import ProgrammingError
-from database import stellar_db, Base, raw_connection
 
 
 def terminate_database_connections(database):

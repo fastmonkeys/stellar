@@ -6,7 +6,7 @@ from functools import partial
 
 from config import load_config
 from models import *
-import operations
+from operations import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound

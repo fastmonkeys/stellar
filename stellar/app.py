@@ -4,9 +4,9 @@ import uuid
 import os
 from functools import partial
 
-from stellar.config import load_config
-from stellar.models import Snapshot, Table, Base
-from stellar.operations import (
+from config import load_config, InvalidConfig
+from models import Snapshot, Table, Base
+from operations import (
     copy_database,
     create_database,
     database_exists,
@@ -19,7 +19,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
-from stellar.exceptions import InvalidConfig
 from schema import SchemaError
 
 
@@ -125,19 +124,18 @@ class Stellar(object):
             self.db.session.commit()
 
     def remove_snapshot(self, snapshot):
-        for table_hash in (s.table_hash for s in snapshot):
-            try:
-                self.operations.remove_database(
-                    'stellar_%s_master' % table_hash
-                )
-            except ProgrammingError:
-                pass
-            try:
-                self.operations.remove_database(
-                    'stellar_%s_slave' % table_hash
-                )
-            except ProgrammingError:
-                pass
+        try:
+            self.operations.remove_database(
+                snapshot.get_table_name('master')
+            )
+        except ProgrammingError:
+            pass
+        try:
+            self.operations.remove_database(
+                snapshot.get_table_name('slave')
+            )
+        except ProgrammingError:
+            pass
         snapshot.delete()
         self.db.session.commit()
 

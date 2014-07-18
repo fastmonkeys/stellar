@@ -31,7 +31,9 @@ class Table(Base):
     __tablename__ = 'table'
     id = sa.Column(sa.Integer, sa.Sequence('table_id_seq'), primary_key=True)
     table_name = sa.Column(sa.String(255), nullable=False)
-    snapshot_id = sa.Column(sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False)
+    snapshot_id = sa.Column(
+        sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False
+    )
     snapshot = sa.orm.relationship(Snapshot, backref='tables')
     slave_pid = sa.Column(sa.Integer, nullable=True)
 

@@ -26,7 +26,7 @@ class Table(Base):
     snapshot = sa.relationship(Snapshot, backref='tables')
     slave_pid = sa.Column(sa.Integer, nullable=True)
 
-    def table_name(self, postfix):
+    def get_table_name(self, postfix):
         return 'stellar_%s_%s_%s' % (
             self.name,
             self.snapshot.hash,

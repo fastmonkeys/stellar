@@ -63,7 +63,7 @@ class Stellar(object):
         if tables_missing:
             self.create_stellar_tables()
 
-        #logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+        # logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
 
     def create_stellar_database(self):
         try:
@@ -117,19 +117,7 @@ class Stellar(object):
             self.db.session.add(table)
         self.db.session.commit()
 
-        #if os.fork():
-        #    return
-
-        for table in snapshot.tables:
-            table.slave_pid = os.getpid()
-            self.db.session.commit()
-            self.operations.copy_database(
-                table.get_table_name('master'),
-                table.get_table_name('slave')
-            )
-            table.slave_pid = None
-            self.db.session.commit()
-
+        self.start_background_slave_copy(snapshot)
 
     def remove_snapshot(self, snapshot):
         for table in snapshot.tables:
@@ -171,11 +159,27 @@ class Stellar(object):
         snapshot.slave_pid = 1
         self.db.session.commit()
 
-        # pid = os.fork()
-        # if pid:
-        #     snapshot.slave_pid = pid
-        #     self.db.session.commit()
-        #     return
+        self.start_background_slave_copy(snapshot)
+
+    def start_background_slave_copy(self, snapshot):
+        snapshot_id = snapshot.id
+
+        self.raw_conn.close()
+        self.raw_db.session.close()
+        self.db.session.close()
+
+        pid = os.fork()
+        if pid:
+            self.init_database()
+            snapshot = self.db.session.query(Snapshot).get(snapshot_id)
+            snapshot.slave_pid = pid
+            self.db.session.commit()
+            return
+
+        self.init_database()
+        self.operations = Operations(self.raw_conn, self.config)
+
+        snapshot = self.db.session.query(Snapshot).get(snapshot_id)
 
         for table in snapshot.tables:
             self.operations.copy_database(
@@ -184,7 +188,6 @@ class Stellar(object):
             )
         snapshot.slave_pid = None
         self.db.session.commit()
-
         sys.exit()
 
     def delete_orphan_snapshots(self, after_delete=None):
@@ -210,7 +213,6 @@ class Stellar(object):
             self.operations.remove_database(database)
             if after_delete:
                 after_delete(database)
-
 
     @property
     def default_snapshot_name(self):

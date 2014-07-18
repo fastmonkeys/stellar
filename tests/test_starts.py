@@ -8,10 +8,6 @@ class TestCase(object):
     def config(self):
         self._config = stellar.config.config
         with tempfile.NamedTemporaryFile() as tmp:
-            # project_name: '%(name)s'
-            # tracked_databases: ['%(db_name)s']
-            # url: '%(url)s'
-            # stellar_url: '%(url)sstellar_data'
             new_config = {
                 'stellar_url': 'sqlite://%s' % tmp.name,
                 'url': 'sqlite://%s' % tmp.name,

@@ -158,7 +158,10 @@ class Stellar(object):
                     % snapshot.table_hash
                 )
                 sys.exit(1)
-            self.operations.remove_database(table.table_name)
+            try:
+                self.operations.remove_database(table.table_name)
+            except ProgrammingError:
+                logging.warn('Database %s does not exist.' % table.table_name)
             self.operations.rename_database(
                 table.get_table_name('slave'),
                 table.table_name

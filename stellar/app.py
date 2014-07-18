@@ -2,9 +2,11 @@ import logging
 import hashlib
 import uuid
 import os
+from functools import partial
 
 from config import load_config
 from models import *
+import operations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
@@ -15,10 +17,23 @@ from sqlalchemy.ext.declarative import declarative_base
 logging.basicConfig()
 
 
+class Operations(object):
+    def __init__(self, raw_connection, config):
+        self.terminate_database_connections = partial(
+            terminate_database_connections, raw_connection
+        )
+        self.create_database = partial(create_database, raw_connection)
+        self.copy_database = partial(copy_database, raw_connection)
+        self.database_exists = partial(database_exists, raw_connection)
+        self.rename_database = partial(rename_database, raw_connection)
+        self.remove_database = partial(remove_database, raw_connection)
+
+
 class Stellar(object):
     def __init__(self):
         self.load_config()
         self.init_database()
+        self.operations = Operations(self.raw_conn, self.config)
 
     def load_config(self):
         self.config = load_config()
@@ -72,7 +87,10 @@ class Stellar(object):
     def create_snapshot(self, snapshot_name):
         for table_name in config['tracked_databases']:
             table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
-            copy_database(table_name, 'stellar_%s_master' % table_hash)
+            self.operations.copy_database(
+                table_name,
+                'stellar_%s_master' % table_hash
+            )
             snapshot = Snapshot(
                 table_name=table_name,
                 table_hash=table_hash,
@@ -89,18 +107,25 @@ class Stellar(object):
                 Snapshot.table_name == table_name,
                 Snapshot.snapshot_name == snapshot_name,
             ).one()
-            copy_database(table_name, 'stellar_%s_slave' % snapshot.table_hash)
+            self.operations.copy_database(
+                table_name,
+                'stellar_%s_slave' % snapshot.table_hash
+            )
             snapshot.is_slave_ready = True
             db.session.commit()
 
     def remove_snapshot(self, snapshot):
         for table_hash in (s.table_hash for s in snapshots):
             try:
-                remove_database('stellar_%s_master' % table_hash)
+                self.operations.remove_database(
+                    'stellar_%s_master' % table_hash
+                )
             except ProgrammingError:
                 pass
             try:
-                remove_database('stellar_%s_slave' % table_hash)
+                self.operations.remove_database(
+                    'stellar_%s_slave' % table_hash
+                )
             except ProgrammingError:
                 pass
         snapshots.delete()
@@ -118,8 +143,8 @@ class Stellar(object):
                     % snapshot.table_hash
                 )
                 sys.exit(1)
-            remove_database(snapshot.table_name)
-            rename_database(
+            self.operations.remove_database(snapshot.table_name)
+            self.operations.rename_database(
                 'stellar_%s_slave' % snapshot.table_hash,
                 snapshot.table_name
             )
@@ -133,7 +158,7 @@ class Stellar(object):
             Snapshot.snapshot_name == name,
             Snapshot.project_name == config['project_name']
         ):
-            copy_database(
+            self.operations.copy_database(
                 'stellar_%s_master' % snapshot.table_hash,
                 'stellar_%s_slave' % snapshot.table_hash
             )
@@ -144,7 +169,6 @@ class Stellar(object):
 
     def get_orphan_snapshots(self):
         from models import Snapshot
-        from operations import remove_database
 
         databases = set()
         stellar_databases = set()
@@ -158,6 +182,9 @@ class Stellar(object):
             databases.add(row[0])
 
         return filter(
-            lambda database: database.startswith('stellar_') and database != 'stellar_data',
+            lambda table: (
+                table.startswith('stellar_') and
+                table != 'stellar_data'
+            ),
             (databases-stellar_databases)
         )

@@ -100,7 +100,7 @@ class CommandApp(object):
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 sleep(1)
-                app.stellar_db.session.refresh(snapshot)
+                app.db.session.refresh(snapshot)
             print ''
 
         app.restore(snapshot)

@@ -1,1 +1,3 @@
-recursive-include *.md *.txt *.py
+recursive-include stellar *.md *.txt *.py
+recursive-include tests *.md *.txt *.py
+include README.md

@@ -20,6 +20,10 @@ class Snapshot(Base):
     hash = sa.Column(sa.String(32), nullable=False, default=get_unique_hash)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
 
+    @property
+    def slaves_ready(self):
+        return all(x.slave_pid is None for x in self.tables)
+
     def __repr__(self):
         return "Snapshot(name=%r, name=%r)" % (
             self.table_name,

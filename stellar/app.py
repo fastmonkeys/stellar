@@ -117,8 +117,8 @@ class Stellar(object):
             self.db.session.add(table)
         self.db.session.commit()
 
-        if os.fork():
-            return
+        #if os.fork():
+        #    return
 
         for table in snapshot.tables:
             table.slave_pid = os.getpid()
@@ -150,25 +150,27 @@ class Stellar(object):
     def restore(self, snapshot):
         for table in snapshot.tables:
             print "Restoring database %s" % table.table_name
-            if not database_exists(table.get_table_name('slave')):
+            if not self.operations.database_exists(
+                table.get_table_name('slave')
+            ):
                 print (
                     "Database stellar_%s_slave does not exist."
                     % snapshot.table_hash
                 )
                 sys.exit(1)
-            self.operations.remove_database(snapshot.table_name)
+            self.operations.remove_database(table.table_name)
             self.operations.rename_database(
-                'stellar_%s_slave' % snapshot.table_hash,
-                snapshot.table_name
+                table.get_table_name('slave'),
+                table.table_name
             )
         snapshot.slave_pid = 1
         self.db.session.commit()
 
-        pid = os.fork()
-        if pid:
-            snapshot.slave_pid = pid
-            self.db.session.commit()
-            return
+        # pid = os.fork()
+        # if pid:
+        #     snapshot.slave_pid = pid
+        #     self.db.session.commit()
+        #     return
 
         for table in snapshot.tables:
             self.operations.copy_database(

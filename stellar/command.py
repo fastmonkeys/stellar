@@ -91,10 +91,10 @@ class CommandApp(object):
                 )
 
         # Check if slaves are ready
-        if not snapshot.is_slave_ready:
+        if not snapshot.slaves_ready:
             sys.stdout.write('Waiting for background process to finish')
             sys.stdout.flush()
-            while not snapshot.is_slave_ready:
+            while not snapshot.slaves_ready:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 sleep(1)

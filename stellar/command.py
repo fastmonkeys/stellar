@@ -6,6 +6,7 @@ import humanize
 
 from app import Stellar
 from datetime import datetime
+from stellar.exceptions import InvalidConfig, MissingConfig
 
 
 class CommandApp(object):
@@ -151,7 +152,13 @@ stellar_url: '%(url)sstellar_data'
 
 
 def main():
-    CommandApp()
+    try:
+        CommandApp()
+    except MissingConfig:
+        print "You don't have stellar.yaml configuration yet."
+        print "Initialize it by running: stellar init"
+    except InvalidConfig, e:
+        print "Your stellar.yaml configuration is wrong: %s" % e.message
 
 if __name__ == '__main__':
     main()

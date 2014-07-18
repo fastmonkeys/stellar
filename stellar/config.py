@@ -1,7 +1,17 @@
 import os
 import yaml
+from schema import Use, Schema
+from stellar.exceptions import MissingConfig, InvalidConfig
+from schema import SchemaError
+
 
 default_config = {}
+schema = Schema({
+    'stellar_url': Use(str),
+    'url': Use(str),
+    'project_name': Use(str),
+    'tracked_databases': [Use(str)]
+})
 
 
 def load_config():
@@ -25,16 +35,13 @@ def load_config():
             return
 
     if not config:
-        raise Exception(
-            "Couldn't find project configuration file stellar.yaml"
-        )
+        raise MissingConfig()
 
     for k, v in default_config.items():
         if k not in config:
             config[k] = v
 
-    for name in ['tracked_databases', 'project_name']:
-        if not config or not name in config:
-            raise Exception('Configuration variable %s is not set.' % name)
-
-    return config
+    try:
+        return schema.validate(config)
+    except SchemaError, e:
+        raise InvalidConfig(e)

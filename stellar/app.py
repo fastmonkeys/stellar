@@ -132,19 +132,21 @@ class Stellar(object):
 
 
     def remove_snapshot(self, snapshot):
-        try:
-            self.operations.remove_database(
-                snapshot.get_table_name('master')
-            )
-        except ProgrammingError:
-            pass
-        try:
-            self.operations.remove_database(
-                snapshot.get_table_name('slave')
-            )
-        except ProgrammingError:
-            pass
-        snapshot.delete()
+        for table in snapshot.tables:
+            try:
+                self.operations.remove_database(
+                    table.get_table_name('master')
+                )
+            except ProgrammingError:
+                pass
+            try:
+                self.operations.remove_database(
+                    table.get_table_name('slave')
+                )
+            except ProgrammingError:
+                pass
+            self.db.session.delete(table)
+        self.db.session.delete(snapshot)
         self.db.session.commit()
 
     def restore(self, snapshot):

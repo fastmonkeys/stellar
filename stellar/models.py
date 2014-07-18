@@ -1,6 +1,12 @@
 import sqlalchemy as sa
 from datetime import datetime
 from database import Base
+import uuid
+import hashlib
+
+
+def get_unique_hash():
+    return hashlib.md5(str(uuid.uuid4())).hexdigest()
 
 
 class Snapshot(Base):
@@ -8,7 +14,7 @@ class Snapshot(Base):
     id = sa.Column(sa.Integer, sa.Sequence('snapshot_id_seq'), primary_key=True)
     snapshot_name = sa.Column(sa.String(255), nullable=False)
     project_name = sa.Column(sa.String(255), nullable=False)
-    hash = sa.Column(sa.String(32), nullable=False)
+    hash = sa.Column(sa.String(32), nullable=False, default=get_unique_hash)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

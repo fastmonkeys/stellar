@@ -172,7 +172,8 @@ class Stellar(object):
         if pid:
             self.init_database()
             snapshot = self.db.session.query(Snapshot).get(snapshot_id)
-            snapshot.slave_pid = pid
+            for table in snapshot.tables:
+                table.slave_pid = pid
             self.db.session.commit()
             return
 
@@ -186,7 +187,7 @@ class Stellar(object):
                 table.get_table_name('master'),
                 table.get_table_name('slave')
             )
-        snapshot.slave_pid = None
+            table.slave_pid = None
         self.db.session.commit()
         sys.exit()
 

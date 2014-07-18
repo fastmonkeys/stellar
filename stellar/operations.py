@@ -1,8 +1,8 @@
 from sqlalchemy.exc import ProgrammingError
 
 
-def terminate_database_connections(database):
-    raw_connection.execute(
+def terminate_database_connections(raw_conn, database):
+    raw_conn.execute(
         '''
             SELECT pg_terminate_backend(pg_stat_activity.pid)
             FROM pg_stat_activity
@@ -13,9 +13,9 @@ def terminate_database_connections(database):
     )
 
 
-def copy_database(from_database, to_database):
+def copy_database(raw_conn, from_database, to_database):
     terminate_database_connections(from_database)
-    raw_connection.execute(
+    raw_conn.execute(
         '''
             CREATE DATABASE "%s" WITH TEMPLATE "%s";
         ''' %
@@ -26,8 +26,8 @@ def copy_database(from_database, to_database):
     )
 
 
-def database_exists(database):
-    return raw_connection.execute(
+def database_exists(raw_conn, database):
+    return raw_conn.execute(
         '''
             SELECT COUNT(*)
             FROM pg_database
@@ -40,8 +40,8 @@ def database_exists(database):
         )
     ).first()[0] > 0
 
-def rename_database(from_database, to_database):
-    raw_connection.execute(
+def rename_database(raw_conn, from_database, to_database):
+    raw_conn.execute(
         '''
             ALTER DATABASE "%s" RENAME TO "%s"
         ''' %
@@ -52,9 +52,9 @@ def rename_database(from_database, to_database):
     )
 
 
-def remove_database(database):
+def remove_database(raw_conn, database):
     terminate_database_connections(database)
-    raw_connection.execute(
+    raw_conn.execute(
         '''
             DROP DATABASE "%s"
         ''' %

@@ -26,9 +26,8 @@ class Snapshot(Base):
         return self.worker_pid is None
 
     def __repr__(self):
-        return "Snapshot(name=%r, name=%r)" % (
-            self.table_name,
-            self.name
+        return "<Snapshot(snapshot_name=%r)>" % (
+            self.snapshot_name
         )
 
 
@@ -54,7 +53,6 @@ class Table(Base):
         )
 
     def __repr__(self):
-        return "Snapshot(table_name=%r, name=%r)" % (
+        return "<Table(table_name=%r)>" % (
             self.table_name,
-            self.name
         )

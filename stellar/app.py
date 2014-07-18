@@ -185,7 +185,7 @@ class Stellar(object):
                 table.get_table_name('master'),
                 table.get_table_name('slave')
             )
-        snapshot.worker_pid = pid
+        snapshot.worker_pid = None
         self.db.session.commit()
         sys.exit()
 

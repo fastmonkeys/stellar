@@ -4,9 +4,18 @@ import uuid
 import os
 from functools import partial
 
+<<<<<<< HEAD
 from stellar.config import load_config
-from stellar.models import Snapshot, Table, Base
-from stellar.operations import (
+from stellar.models import *
+from stellar.operations import *
+||||||| merged common ancestors
+from config import load_config
+from models import *
+from operations import *
+=======
+from config import load_config
+from models import Snapshot, Table, Base
+from operations import (
     copy_database,
     create_database,
     database_exists,
@@ -14,6 +23,7 @@ from stellar.operations import (
     rename_database,
     terminate_database_connections,
 )
+>>>>>>> 2b2ce89ade3adc20a5e9c8679f01ef6e3efba28f
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
@@ -79,12 +89,11 @@ class Stellar(object):
     def get_snapshot(self, snapshot_name):
         return self.db.session.query(Snapshot).filter(
             Snapshot.snapshot_name == snapshot_name,
-            Snapshot.project_name == self.config['project_name']
         ).first()
 
     def get_snapshots(self):
         return self.db.session.query(
-            Snapshot.project_name == self.config['project_name']
+            Snapshot
         ).order_by(
             Snapshot.created_at.desc()
         ).all()

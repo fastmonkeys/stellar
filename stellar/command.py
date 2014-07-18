@@ -45,6 +45,7 @@ class CommandApp(object):
 
         if app.get_snapshot(args.name):
             print "Snapshot with name %s already exists" % name
+            exit(1)
         else:
             def before_copy(table_name):
                 print "Snapshotting database %s" % table_name
@@ -81,7 +82,7 @@ class CommandApp(object):
                     "Couldn't find any snapshots for project %s" %
                     self.config['project_name']
                 )
-                return
+                exit(1)
         else:
             snapshot = app.get_snapshot(args.name)
             if not snapshot:
@@ -89,6 +90,7 @@ class CommandApp(object):
                     "Couldn't find snapshot with name %s.\n"
                     "You can list snapshots with 'stellar list'" % args.name
                 )
+                exit(1)
 
         # Check if slaves are ready
         if not snapshot.slaves_ready:
@@ -155,8 +157,10 @@ def main():
     except MissingConfig:
         print "You don't have stellar.yaml configuration yet."
         print "Initialize it by running: stellar init"
+        exit(1)
     except InvalidConfig, e:
         print "Your stellar.yaml configuration is wrong: %s" % e.message
+        exit(1)
 
 if __name__ == '__main__':
     main()

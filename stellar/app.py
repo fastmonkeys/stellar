@@ -63,7 +63,7 @@ class Stellar(object):
         if tables_missing:
             self.create_stellar_tables()
 
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+        #logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
 
     def create_stellar_database(self):
         try:
@@ -100,6 +100,7 @@ class Stellar(object):
             project_name=self.config['project_name']
         )
         self.db.session.add(snapshot)
+        self.db.session.flush()
 
         for table_name in self.config['tracked_databases']:
             if before_copy:
@@ -179,13 +180,12 @@ class Stellar(object):
 
         sys.exit()
 
-    def get_orphan_snapshots(self):
-        from models import Snapshot
-
+    def delete_orphan_snapshots(self, after_delete=None):
         databases = set()
         stellar_databases = set()
         for snapshot in self.db.session.query(Snapshot):
-            stellar_databases.add(snapshot.table_name)
+            for table in snapshot.tables:
+                stellar_databases.add(table.table_name)
 
         for row in self.raw_db.execute('''
             SELECT datname FROM pg_database
@@ -193,13 +193,17 @@ class Stellar(object):
         '''):
             databases.add(row[0])
 
-        return filter(
-            lambda table: (
-                table.startswith('stellar_') and
-                table != 'stellar_data'
+        for database in filter(
+            lambda database: (
+                database.startswith('stellar_') and
+                database != 'stellar_data'
             ),
             (databases-stellar_databases)
-        )
+        ):
+            self.operations.remove_database(database)
+            if after_delete:
+                after_delete(database)
+
 
     @property
     def default_snapshot_name(self):

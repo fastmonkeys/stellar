@@ -27,11 +27,11 @@ class CommandApp(object):
         getattr(self, args.command)()
 
     def gc(self):
+        def after_delete(database):
+            print "Deleted table %s" % database
+
         app = Stellar()
-        for snapshot in app.get_orphan_snapshots():
-            print "Removing %s" % snapshot.table_name
-            app.remove_snapshot(snapshot)
-        print "Garbage collection complete"
+        app.delete_orphan_snapshots(after_delete)
 
     def snapshot(self):
         parser = argparse.ArgumentParser(

@@ -14,7 +14,7 @@ def terminate_database_connections(raw_conn, database):
 
 
 def create_database(raw_conn, database):
-    terminate_database_connections(raw_conn, from_database)
+    terminate_database_connections(raw_conn, database)
     raw_conn.execute(
         '''
             CREATE DATABASE "%s";
@@ -65,7 +65,7 @@ def rename_database(raw_conn, from_database, to_database):
 
 
 def remove_database(raw_conn, database):
-    terminate_database_connections(database)
+    terminate_database_connections(raw_conn, database)
     raw_conn.execute(
         '''
             DROP DATABASE "%s"

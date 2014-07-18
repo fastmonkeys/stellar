@@ -63,44 +63,21 @@ class CommandApp(object):
         print "Garbage collection complete"
 
     def snapshot(self):
-        from database import stellar_db
-        from models import Snapshot
-        from operations import copy_database
 
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
-        parser.add_argument('name', nargs='?', default=(
-            '%s' % stellar_db.session.query(Snapshot).count()
-        ))
+        parser.add_argument('name', nargs='?', default='default')
         args = parser.parse_args(sys.argv[2:])
 
         print "Snapshotting tracked databases: %s" % ', '.join(
             config['tracked_databases']
         )
-
-        for table_name in config['tracked_databases']:
-            table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
-            copy_database(table_name, 'stellar_%s_master' % table_hash)
-            snapshot = Snapshot(
-                table_name=table_name,
-                table_hash=table_hash,
-                project_name=config['project_name'],
-                name=args.name,
-            )
-            stellar_db.session.add(snapshot)
-        stellar_db.session.commit()
-        if os.fork():
-            return
-
-        for table_name in config['tracked_databases']:
-            snapshot = stellar_db.session.query(Snapshot).filter(
-                Snapshot.table_name == table_name,
-                Snapshot.name == args.name,
-            ).one()
-            copy_database(table_name, 'stellar_%s_slave' % snapshot.table_hash)
-            snapshot.is_slave_ready = True
-            stellar_db.session.commit()
+        app = Stellar()
+        if app.get_snapshot(args.name):
+            print "Already exist"
+        else:
+            app.create_snapshot(args.name)
 
     def list(self):
         from database import stellar_db
@@ -110,16 +87,14 @@ class CommandApp(object):
             description='List snapshots'
         )
 
+        snapshots = Stellar().get_snapshots()
+
         print '\n'.join(
             '%s %s ago' % (
                 s.name,
                 humanize.naturaltime(datetime.utcnow() - s.created_at)
             )
-            for s in stellar_db.session.query(
-                Snapshot
-            ).order_by(
-                Snapshot.created_at.desc()
-            ).all()
+            for s in snapshots
         )
 
     def restore(self):

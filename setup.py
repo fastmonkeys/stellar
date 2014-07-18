@@ -29,7 +29,6 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    install_requires=['pytest>=2.3'],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
@@ -41,5 +40,12 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Database',
         'Topic :: Software Development :: Version Control',
+    ],
+    install_requires = [
+        'PyYAML',
+        'SQLAlchemy',
+        'humanize',
+        'pytest',
+        'schema',
     ]
 )

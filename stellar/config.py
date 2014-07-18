@@ -1,11 +1,7 @@
 import os
 import yaml
 
-default_config = {
-    'stellar_url': 'postgresql://localhost:5432/stellar_data',
-    'url': 'postgresql://localhost:5432/',
-    'tracked_databases': ['pelsu']
-}
+default_config = {}
 
 
 def load_config():

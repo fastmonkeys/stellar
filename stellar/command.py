@@ -228,9 +228,12 @@ class CommandApp(object):
         print "Deleted"
 
 
-if __name__ == '__main__':
+def main():
     create_stellar_tables()
     CommandApp()
+
+if __name__ == '__main__':
+    main()
     #
     # stellar
     # 1. Snapshot current database

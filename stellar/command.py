@@ -7,10 +7,11 @@ from time import sleep
 
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm.exc import MultipleResultsFound
+import humanize
 
+from app import Stellar
 from config import config
 from datetime import datetime
-import humanize
 
 
 class CommandApp(object):
@@ -273,9 +274,6 @@ stellar_url: '%(url)sstellar_data'
 
 
 def main():
-    from app import Stellar
-    app = Stellar()
-    print app
     CommandApp()
 
 if __name__ == '__main__':

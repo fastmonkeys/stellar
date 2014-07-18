@@ -273,6 +273,9 @@ stellar_url: '%(url)sstellar_data'
 
 
 def main():
+    from app import Stellar
+    app = Stellar()
+    print app
     CommandApp()
 
 if __name__ == '__main__':

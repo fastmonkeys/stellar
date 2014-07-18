@@ -2,18 +2,6 @@ from sqlalchemy.exc import ProgrammingError
 from database import stellar_db, Base, raw_connection
 
 
-def create_stellar_tables():
-    try:
-        raw_connection.execute('''
-            CREATE DATABASE "stellar_data"
-        ''')
-    except ProgrammingError:
-        return False
-    Base.metadata.create_all(stellar_db)
-    stellar_db.session.commit()
-    return True
-
-
 def terminate_database_connections(database):
     raw_connection.execute(
         '''

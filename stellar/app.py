@@ -3,7 +3,7 @@ import hashlib
 import uuid
 import os
 
-from config import config
+from config import load_config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
@@ -11,27 +11,35 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 
 
+logging.basicConfig()
+
+
 class Stellar(object):
     def __init__(self):
+        self.load_config()
         self.init_database()
         self.create_stellar_database()
 
+    def load_config(self):
+        self.config = load_config()
+
     def init_database(self):
-        self.db = create_engine(config['stellar_url'], echo=False)
-        self.raw_db = create_engine(config['url'], echo=False)
+        self.db = create_engine(self.config['stellar_url'], echo=False)
+        self.raw_db = create_engine(self.config['url'], echo=False)
         self.raw_conn = self.db.connect()
-        self.raw_conn.connection.set_isolation_level(0)
+        try:
+            self.raw_conn.connection.set_isolation_level(0)
+        except AttributeError:
+            logging.info('Could not set isolation level to 0')
+
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
 
-        logging.basicConfig()
         logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
 
     def create_stellar_database(self):
         try:
-            self.raw_conn.execute('''
-                CREATE DATABASE "stellar_data"
-            ''')
+            self.raw_conn.execute('CREATE DATABASE "stellar_data"')
         except ProgrammingError:
             return False
         self.base.metadata.create_all(self.db)
@@ -145,6 +153,6 @@ class Stellar(object):
             databases.add(row[0])
 
         return filter(
-            lambda database: if database.startswith('stellar_') and database != 'stellar_data',
+            lambda database: database.startswith('stellar_') and database != 'stellar_data',
             (databases-stellar_databases)
         )

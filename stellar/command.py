@@ -5,7 +5,6 @@ from time import sleep
 import humanize
 
 from app import Stellar
-from config import config
 from datetime import datetime
 
 

@@ -5,6 +5,7 @@ default_config = {}
 
 
 def load_config():
+    config = None
     current_directory = os.getcwd()
     while True:
         try:
@@ -23,28 +24,17 @@ def load_config():
         if current_directory == '/':
             return
 
-    for name in ['tracked_databases', 'project_name']:
-        if not config or not name in config:
-            raise Exception('Configuration variable %s is not set.' % name)
+    if not config:
+        raise Exception(
+            "Couldn't find project configuration file stellar.yaml"
+        )
 
     for k, v in default_config.items():
         if k not in config:
             config[k] = v
+
+    for name in ['tracked_databases', 'project_name']:
+        if not config or not name in config:
+            raise Exception('Configuration variable %s is not set.' % name)
+
     return config
-
-
-class Config(object):
-    config = None
-
-    def __getitem__(self, key):
-        if not self.config:
-            self.config = load_config()
-            if not self.config:
-                raise Exception(
-                    "Couldn't find project configuration file stellar.yaml"
-                )
-
-        return self.config[key]
-
-
-config = Config()

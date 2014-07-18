@@ -38,7 +38,7 @@ def load_config():
         )
 
         if current_directory == '/':
-            return
+            break
 
     if not config:
         raise MissingConfig()

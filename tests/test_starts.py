@@ -20,9 +20,6 @@ class TestCase(object):
                 'TEST': True
             }
             stellar.config.config = new_config
-            # stellar.operations.create_database(
-
-            # )
             yield
         stellar.config.config = self._config
 

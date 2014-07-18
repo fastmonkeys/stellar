@@ -25,7 +25,7 @@ class Stellar(object):
 
     def init_database(self):
         self.raw_db = create_engine(self.config['url'], echo=False)
-        self.raw_conn = self.db.connect()
+        self.raw_conn = self.raw_db.connect()
         try:
             self.raw_conn.connection.set_isolation_level(0)
         except AttributeError:
@@ -35,9 +35,6 @@ class Stellar(object):
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
         tables_missing = self.create_stellar_database()
-
-        self.db = create_engine(config['stellar_url'], echo=False)
-        self.db.session = sessionmaker(bind=self.db)()
 
         if tables_missing:
             self.create_stellar_tables()

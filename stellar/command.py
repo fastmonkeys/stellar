@@ -3,10 +3,10 @@ import sys
 import hashlib
 import uuid
 import os
-import sys
 from time import sleep
 
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm.exc import MultipleResultsFound
 
 from config import config
 from database import stellar_db, db
@@ -119,15 +119,22 @@ class CommandApp(object):
 
     def restore(self):
         parser = argparse.ArgumentParser(
-            description='Take a snapshot of the database'
+            description='Restore database from snapshot'
         )
         parser.add_argument('name', nargs='?')
         args = parser.parse_args(sys.argv[2:])
 
         if not args.name:
-            name = stellar_db.session.query(Snapshot).filter(
-                Snapshot.project_name == config['project_name']
-            ).order_by(Snapshot.created_at.desc()).limit(1).one().name
+            try:
+                name = stellar_db.session.query(Snapshot).filter(
+                    Snapshot.project_name == config['project_name']
+                ).order_by(Snapshot.created_at.desc()).limit(1).one().name
+            except MultipleResultsFound:
+                print (
+                    "Couldn't find any snapshots for project %s" %
+                    config['project_name']
+                )
+                return
         else:
             name = args.name
 
@@ -145,12 +152,17 @@ class CommandApp(object):
                     sleep(1)
                     stellar_db.session.refresh(snapshot)
                 print ''
-
+        else:
+            print (
+                "Couldn't find snapshot with name %s.\n"
+                "You can list snapshots with 'stellar list'" % name
+            )
+        print "Found snapshot %s" % name
         for snapshot in stellar_db.session.query(Snapshot).filter(
             Snapshot.name == name,
             Snapshot.project_name == config['project_name']
         ):
-            print "Restoring %s" % snapshot.table_name
+            print "Restoring database %s" % snapshot.table_name
             if not database_exists('stellar_%s_slave' % snapshot.table_hash):
                 print (
                     "Database stellar_%s_slave does not exist."

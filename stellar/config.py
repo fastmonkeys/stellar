@@ -18,7 +18,9 @@ while True:
     current_directory = os.path.abspath(os.path.join(current_directory, '..'))
 
     if current_directory == '/':
-        raise Exception('stellar.yaml not found')
+        raise Exception(
+            "Couldn't find project configuration file stellar.yaml"
+        )
 
 for name in ['tracked_databases', 'project_name']:
     if not config or not name in config:

@@ -21,7 +21,7 @@ schema = Schema({
 
 
 def load_config():
-    config = None
+    config = {}
     current_directory = os.getcwd()
     while True:
         try:

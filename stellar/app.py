@@ -2,11 +2,12 @@ import logging
 import hashlib
 import uuid
 import os
+import sys
 from functools import partial
 
-from stellar.config import load_config
-from stellar.models import Snapshot, Table, Base
-from stellar.operations import (
+from config import load_config, InvalidConfig
+from models import Snapshot, Table, Base
+from operations import (
     copy_database,
     create_database,
     database_exists,
@@ -19,7 +20,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
-from stellar.exceptions import InvalidConfig
 from schema import SchemaError
 
 
@@ -131,29 +131,25 @@ class Stellar(object):
 
 
     def remove_snapshot(self, snapshot):
-        for table_hash in (s.table_hash for s in snapshot):
-            try:
-                self.operations.remove_database(
-                    'stellar_%s_master' % table_hash
-                )
-            except ProgrammingError:
-                pass
-            try:
-                self.operations.remove_database(
-                    'stellar_%s_slave' % table_hash
-                )
-            except ProgrammingError:
-                pass
+        try:
+            self.operations.remove_database(
+                snapshot.get_table_name('master')
+            )
+        except ProgrammingError:
+            pass
+        try:
+            self.operations.remove_database(
+                snapshot.get_table_name('slave')
+            )
+        except ProgrammingError:
+            pass
         snapshot.delete()
         self.db.session.commit()
 
     def restore(self, snapshot):
-        for snapshot in self.db.session.query(Snapshot).filter(
-            Snapshot.snapshot_name == name,
-            Snapshot.project_name == self.config['project_name']
-        ):
-            print "Restoring database %s" % snapshot.table_name
-            if not database_exists('stellar_%s_slave' % snapshot.table_hash):
+        for table in snapshot.tables:
+            print "Restoring database %s" % table.table_name
+            if not database_exists(table.get_table_name('slave')):
                 print (
                     "Database stellar_%s_slave does not exist."
                     % snapshot.table_hash
@@ -164,22 +160,22 @@ class Stellar(object):
                 'stellar_%s_slave' % snapshot.table_hash,
                 snapshot.table_name
             )
-            snapshot.is_slave_ready = False
-            self.db.session.commit()
+        snapshot.slave_pid = 1
+        self.db.session.commit()
 
-        if os.fork():
+        pid = os.fork()
+        if pid:
+            snapshot.slave_pid = pid
+            self.db.session.commit()
             return
 
-        for snapshot in db.session.query(Snapshot).filter(
-            Snapshot.snapshot_name == name,
-            Snapshot.project_name == self.config['project_name']
-        ):
+        for table in snapshot.tables:
             self.operations.copy_database(
-                'stellar_%s_master' % snapshot.table_hash,
-                'stellar_%s_slave' % snapshot.table_hash
+                table.get_table_name('master'),
+                table.get_table_name('slave')
             )
-            snapshot.is_slave_ready = True
-            self.db.session.commit()
+        snapshot.slave_pid = None
+        self.db.session.commit()
 
         sys.exit()
 

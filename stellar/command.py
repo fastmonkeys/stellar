@@ -6,7 +6,7 @@ import humanize
 
 from app import Stellar
 from datetime import datetime
-from stellar.exceptions import InvalidConfig, MissingConfig
+from config import InvalidConfig, MissingConfig
 
 
 class CommandApp(object):
@@ -39,6 +39,9 @@ class CommandApp(object):
         )
         parser.add_argument('name', nargs='?', default='')
         args = parser.parse_args(sys.argv[2:])
+        print "Snapshotting tracked databases: %s" % ', '.join(
+            self.config['tracked_databases']
+        )
         app = Stellar()
         name = args.name or app.default_snapshot_name
 
@@ -78,7 +81,7 @@ class CommandApp(object):
             if not snapshot:
                 print (
                     "Couldn't find any snapshots for project %s" %
-                    config['project_name']
+                    self.config['project_name']
                 )
                 return
         else:
@@ -107,15 +110,12 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Removes spesified snapshot'
         )
-        parser.add_argument('name', default='')
+        parser.add_argument('name')
         args = parser.parse_args(sys.argv[2:])
 
         app = Stellar()
 
-        if not args.name:
-            assert False
-        else:
-            snapshot = app.get_snapshot(args.name)
+        snapshot = app.get_snapshot(args.name)
         if not snapshot:
             print "Couldn't find snapshot %s" % args.name
             return

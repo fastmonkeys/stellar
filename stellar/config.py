@@ -1,8 +1,14 @@
 import os
 import yaml
-from schema import Use, Schema
-from stellar.exceptions import MissingConfig, InvalidConfig
-from schema import SchemaError
+from schema import Use, Schema, SchemaError
+
+
+class InvalidConfig(Exception):
+    pass
+
+
+class MissingConfig(Exception):
+    pass
 
 
 default_config = {}

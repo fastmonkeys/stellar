@@ -14,7 +14,7 @@ def terminate_database_connections(raw_conn, database):
 
 
 def create_database(raw_conn, database):
-    terminate_database_connections(from_database)
+    terminate_database_connections(raw_conn, from_database)
     raw_conn.execute(
         '''
             CREATE DATABASE "%s";
@@ -26,7 +26,7 @@ def create_database(raw_conn, database):
 
 
 def copy_database(raw_conn, from_database, to_database):
-    terminate_database_connections(from_database)
+    terminate_database_connections(raw_conn, from_database)
     raw_conn.execute(
         '''
             CREATE DATABASE "%s" WITH TEMPLATE "%s";

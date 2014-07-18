@@ -94,35 +94,41 @@ class Stellar(object):
             Snapshot.project_name == self.config['project_name']
         ).order_by(Snapshot.created_at.desc()).first()
 
-    def create_snapshot(self, snapshot_name):
+    def create_snapshot(self, snapshot_name, before_copy=None):
+        snapshot = Snapshot(
+            snapshot_name=snapshot_name,
+            project_name=self.config['project_name']
+        )
+        self.db.session.add(snapshot)
+
         for table_name in self.config['tracked_databases']:
-            table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
+            if before_copy:
+                before_copy(table_name)
+            table = Table(
+                table_name=table_name,
+                snapshot=snapshot,
+                slave_pid=1
+            )
             self.operations.copy_database(
                 table_name,
-                'stellar_%s_master' % table_hash
+                table.get_table_name('master')
             )
-            snapshot = Snapshot(
-                table_name=table_name,
-                table_hash=table_hash,
-                project_name=self.config['project_name'],
-                name=snapshot_name,
-            )
-            self.db.session.add(snapshot)
+            self.db.session.add(table)
         self.db.session.commit()
+
         if os.fork():
             return
 
-        for table_name in self.config['tracked_databases']:
-            snapshot = self.db.session.query(Snapshot).filter(
-                Snapshot.table_name == table_name,
-                Snapshot.snapshot_name == snapshot_name,
-            ).one()
-            self.operations.copy_database(
-                table_name,
-                'stellar_%s_slave' % snapshot.table_hash
-            )
-            snapshot.is_slave_ready = True
+        for table in snapshot.tables:
+            table.slave_pid = os.getpid()
             self.db.session.commit()
+            self.operations.copy_database(
+                table.get_table_name('master'),
+                table.get_table_name('slave')
+            )
+            table.slave_pid = None
+            self.db.session.commit()
+
 
     def remove_snapshot(self, snapshot):
         for table_hash in (s.table_hash for s in snapshot):
@@ -198,3 +204,13 @@ class Stellar(object):
             ),
             (databases-stellar_databases)
         )
+
+    @property
+    def default_snapshot_name(self):
+        n = 1
+        while self.db.session.query(Snapshot).filter(
+            Snapshot.snapshot_name == 'snap%d' % n,
+            Snapshot.project_name == self.config['project_name']
+        ).count():
+            n += 1
+        return 'snap%d' % n

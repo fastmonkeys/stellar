@@ -36,8 +36,13 @@ class Table(Base):
     slave_pid = sa.Column(sa.Integer, nullable=True)
 
     def get_table_name(self, postfix):
+        if not self.snapshot:
+            raise Exception('Table name requires snapshot')
+        if not self.snapshot.hash:
+            raise Exception('Snapshot hash is empty.')
+
         return 'stellar_%s_%s_%s' % (
-            self.name,
+            self.table_name,
             self.snapshot.hash,
             postfix
         )

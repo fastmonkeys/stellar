@@ -37,17 +37,17 @@ class CommandApp(object):
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
-        parser.add_argument('name', nargs='?', default='default')
+        parser.add_argument('name', nargs='?', default='')
         args = parser.parse_args(sys.argv[2:])
-
-        print "Snapshotting tracked databases: %s" % ', '.join(
-            config['tracked_databases']
-        )
         app = Stellar()
+        name = args.name or app.default_snapshot_name
+
         if app.get_snapshot(args.name):
-            print "Already exist"
+            print "Snapshot with name %s already exists" % name
         else:
-            app.create_snapshot(args.name)
+            def before_copy(table_name):
+                print "Snapshotting database %s" % table_name
+            app.create_snapshot(args.name, before_copy=before_copy)
 
     def list(self):
         argparse.ArgumentParser(

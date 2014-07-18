@@ -83,7 +83,7 @@ class Stellar(object):
         ).first()
 
     def get_snapshots(self):
-        return self.db.session.query(
+        return self.db.session.query(Snapshot).filter(
             Snapshot.project_name == self.config['project_name']
         ).order_by(
             Snapshot.created_at.desc()

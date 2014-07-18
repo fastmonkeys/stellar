@@ -48,7 +48,7 @@ class CommandApp(object):
         else:
             def before_copy(table_name):
                 print "Snapshotting database %s" % table_name
-            app.create_snapshot(args.name, before_copy=before_copy)
+            app.create_snapshot(name, before_copy=before_copy)
 
     def list(self):
         argparse.ArgumentParser(
@@ -59,7 +59,7 @@ class CommandApp(object):
 
         print '\n'.join(
             '%s %s ago' % (
-                s.name,
+                s.snapshot_name,
                 humanize.naturaltime(datetime.utcnow() - s.created_at)
             )
             for s in snapshots

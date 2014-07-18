@@ -2,7 +2,7 @@
 import os
 import re
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 # https://bitbucket.org/zzzeek/alembic/raw/f38eaad4a80d7e3d893c3044162971971ae0
@@ -22,7 +22,7 @@ setup(
     license='BSD',
     author=u'Teemu Kokkonen, Pekka Pöyry',
     author_email='teemu@fastmonkeys.com, pekka@fastmonkeys.com',
-    py_modules=['stellar'],
+    packages=find_packages('.', exclude=['examples*', 'test*']),
     entry_points={
         'console_scripts': [ 'stellar = stellar.command:main' ],
     },

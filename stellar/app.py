@@ -47,7 +47,7 @@ class Stellar(object):
 
     def get_snapshot(self, snapshot_name):
         return self.db.session.query(Snapshot).filter(
-            Snapshot.name == snapshot_name,
+            Snapshot.snapshot_name == snapshot_name,
         ).first()
 
     def get_snapshots(self):
@@ -80,7 +80,7 @@ class Stellar(object):
         for table_name in config['tracked_databases']:
             snapshot = db.session.query(Snapshot).filter(
                 Snapshot.table_name == table_name,
-                Snapshot.name == snapshot_name,
+                Snapshot.snapshot_name == snapshot_name,
             ).one()
             copy_database(table_name, 'stellar_%s_slave' % snapshot.table_hash)
             snapshot.is_slave_ready = True
@@ -101,7 +101,7 @@ class Stellar(object):
 
     def restore(self, snapshot):
         for snapshot in db.session.query(Snapshot).filter(
-            Snapshot.name == name,
+            Snapshot.snapshot_name == name,
             Snapshot.project_name == config['project_name']
         ):
             print "Restoring database %s" % snapshot.table_name
@@ -123,7 +123,7 @@ class Stellar(object):
             return
 
         for snapshot in db.session.query(Snapshot).filter(
-            Snapshot.name == name,
+            Snapshot.snapshot_name == name,
             Snapshot.project_name == config['project_name']
         ):
             copy_database(

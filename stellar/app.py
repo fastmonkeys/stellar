@@ -1,7 +1,12 @@
 import logging
+import hashlib
+import uuid
+import os
+
 from config import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -35,7 +40,7 @@ class Stellar(object):
     def get_snapshot(self, snapshot_name):
         return self.stellar_db.session.query(Snapshot).filter(
             Snapshot.name == snapshot_name,
-        ).count() > 0
+        ).first()
 
     def get_snapshots(self):
         return self.stellar_db.session.query(
@@ -43,6 +48,12 @@ class Stellar(object):
         ).order_by(
             Snapshot.created_at.desc()
         ).all()
+
+    def get_latest_snapshot(self):
+        return self.stellar_db.session.query(Snapshot).filter(
+            Snapshot.project_name == config['project_name']
+        ).order_by(Snapshot.created_at.desc()).first()
+
 
     def create_snapshot(self, snapshot_name):
         for table_name in config['tracked_databases']:
@@ -67,3 +78,73 @@ class Stellar(object):
             copy_database(table_name, 'stellar_%s_slave' % snapshot.table_hash)
             snapshot.is_slave_ready = True
             stellar_db.session.commit()
+
+    def remove_snapshot(self, snapshot):
+        for table_hash in (s.table_hash for s in snapshots):
+            try:
+                remove_database('stellar_%s_master' % table_hash)
+            except ProgrammingError:
+                pass
+            try:
+                remove_database('stellar_%s_slave' % table_hash)
+            except ProgrammingError:
+                pass
+        snapshots.delete()
+        stellar_db.session.commit()
+
+    def restore(self, snapshot):
+        for snapshot in stellar_db.session.query(Snapshot).filter(
+            Snapshot.name == name,
+            Snapshot.project_name == config['project_name']
+        ):
+            print "Restoring database %s" % snapshot.table_name
+            if not database_exists('stellar_%s_slave' % snapshot.table_hash):
+                print (
+                    "Database stellar_%s_slave does not exist."
+                    % snapshot.table_hash
+                )
+                sys.exit(1)
+            remove_database(snapshot.table_name)
+            rename_database(
+                'stellar_%s_slave' % snapshot.table_hash,
+                snapshot.table_name
+            )
+            snapshot.is_slave_ready = False
+            stellar_db.session.commit()
+
+        if os.fork():
+            return
+
+        for snapshot in stellar_db.session.query(Snapshot).filter(
+            Snapshot.name == name,
+            Snapshot.project_name == config['project_name']
+        ):
+            copy_database(
+                'stellar_%s_master' % snapshot.table_hash,
+                'stellar_%s_slave' % snapshot.table_hash
+            )
+            snapshot.is_slave_ready = True
+            stellar_db.session.commit()
+
+        sys.exit()
+
+    def get_orphan_snapshots(self):
+        from database import stellar_db, db
+        from models import Snapshot
+        from operations import remove_database
+
+        databases = set()
+        stellar_databases = set()
+        for snapshot in stellar_db.session.query(Snapshot):
+            stellar_databases.add(snapshot.table_name)
+
+        for row in db.execute('''
+            SELECT datname FROM pg_database
+            WHERE datistemplate = false
+        '''):
+            databases.add(row[0])
+
+        return filter(
+            lambda database: if database.startswith('stellar_') and database != 'stellar_data',
+            (databases-stellar_databases)
+        )

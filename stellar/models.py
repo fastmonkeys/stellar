@@ -19,10 +19,11 @@ class Snapshot(Base):
     project_name = sa.Column(sa.String(255), nullable=False)
     hash = sa.Column(sa.String(32), nullable=False, default=get_unique_hash)
     created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    worker_pid = sa.Column(sa.Integer, nullable=True)
 
     @property
     def slaves_ready(self):
-        return all(x.slave_pid is None for x in self.tables)
+        return self.worker_pid is None
 
     def __repr__(self):
         return "Snapshot(name=%r, name=%r)" % (
@@ -39,7 +40,6 @@ class Table(Base):
         sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False
     )
     snapshot = sa.orm.relationship(Snapshot, backref='tables')
-    slave_pid = sa.Column(sa.Integer, nullable=True)
 
     def get_table_name(self, postfix):
         if not self.snapshot:

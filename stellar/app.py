@@ -107,8 +107,7 @@ class Stellar(object):
                 before_copy(table_name)
             table = Table(
                 table_name=table_name,
-                snapshot=snapshot,
-                slave_pid=1
+                snapshot=snapshot
             )
             self.operations.copy_database(
                 table_name,
@@ -156,7 +155,7 @@ class Stellar(object):
                 table.get_table_name('slave'),
                 table.table_name
             )
-        snapshot.slave_pid = 1
+        snapshot.worker_pid = 1
         self.db.session.commit()
 
         self.start_background_slave_copy(snapshot)
@@ -172,8 +171,7 @@ class Stellar(object):
         if pid:
             self.init_database()
             snapshot = self.db.session.query(Snapshot).get(snapshot_id)
-            for table in snapshot.tables:
-                table.slave_pid = pid
+            snapshot.worker_pid = pid
             self.db.session.commit()
             return
 
@@ -187,7 +185,7 @@ class Stellar(object):
                 table.get_table_name('master'),
                 table.get_table_name('slave')
             )
-            table.slave_pid = None
+        snapshot.worker_pid = pid
         self.db.session.commit()
         sys.exit()
 

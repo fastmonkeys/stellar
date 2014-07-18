@@ -39,9 +39,7 @@ class CommandApp(object):
         )
         parser.add_argument('name', nargs='?', default='')
         args = parser.parse_args(sys.argv[2:])
-        print "Snapshotting tracked databases: %s" % ', '.join(
-            self.config['tracked_databases']
-        )
+
         app = Stellar()
         name = args.name or app.default_snapshot_name
 

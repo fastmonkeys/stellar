@@ -5,8 +5,15 @@ import os
 from functools import partial
 
 from config import load_config
-from models import *
-from operations import *
+from models import Snapshot, Table, Base
+from operations import (
+    copy_database,
+    create_database,
+    database_exists,
+    remove_database,
+    rename_database,
+    terminate_database_connections,
+)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
@@ -81,11 +88,11 @@ class Stellar(object):
 
     def get_latest_snapshot(self):
         return self.db.session.query(Snapshot).filter(
-            Snapshot.project_name == config['project_name']
+            Snapshot.project_name == self.config['project_name']
         ).order_by(Snapshot.created_at.desc()).first()
 
     def create_snapshot(self, snapshot_name):
-        for table_name in config['tracked_databases']:
+        for table_name in self.config['tracked_databases']:
             table_hash = hashlib.md5(str(uuid.uuid4())).hexdigest()
             self.operations.copy_database(
                 table_name,
@@ -94,16 +101,16 @@ class Stellar(object):
             snapshot = Snapshot(
                 table_name=table_name,
                 table_hash=table_hash,
-                project_name=config['project_name'],
+                project_name=self.config['project_name'],
                 name=snapshot_name,
             )
-            db.session.add(snapshot)
-        db.session.commit()
+            self.db.session.add(snapshot)
+        self.db.session.commit()
         if os.fork():
             return
 
-        for table_name in config['tracked_databases']:
-            snapshot = db.session.query(Snapshot).filter(
+        for table_name in self.config['tracked_databases']:
+            snapshot = self.db.session.query(Snapshot).filter(
                 Snapshot.table_name == table_name,
                 Snapshot.snapshot_name == snapshot_name,
             ).one()
@@ -112,10 +119,10 @@ class Stellar(object):
                 'stellar_%s_slave' % snapshot.table_hash
             )
             snapshot.is_slave_ready = True
-            db.session.commit()
+            self.db.session.commit()
 
     def remove_snapshot(self, snapshot):
-        for table_hash in (s.table_hash for s in snapshots):
+        for table_hash in (s.table_hash for s in snapshot):
             try:
                 self.operations.remove_database(
                     'stellar_%s_master' % table_hash
@@ -128,13 +135,13 @@ class Stellar(object):
                 )
             except ProgrammingError:
                 pass
-        snapshots.delete()
-        db.session.commit()
+        snapshot.delete()
+        self.db.session.commit()
 
     def restore(self, snapshot):
-        for snapshot in db.session.query(Snapshot).filter(
+        for snapshot in self.db.session.query(Snapshot).filter(
             Snapshot.snapshot_name == name,
-            Snapshot.project_name == config['project_name']
+            Snapshot.project_name == self.config['project_name']
         ):
             print "Restoring database %s" % snapshot.table_name
             if not database_exists('stellar_%s_slave' % snapshot.table_hash):
@@ -149,21 +156,21 @@ class Stellar(object):
                 snapshot.table_name
             )
             snapshot.is_slave_ready = False
-            db.session.commit()
+            self.db.session.commit()
 
         if os.fork():
             return
 
         for snapshot in db.session.query(Snapshot).filter(
             Snapshot.snapshot_name == name,
-            Snapshot.project_name == config['project_name']
+            Snapshot.project_name == self.config['project_name']
         ):
             self.operations.copy_database(
                 'stellar_%s_master' % snapshot.table_hash,
                 'stellar_%s_slave' % snapshot.table_hash
             )
             snapshot.is_slave_ready = True
-            db.session.commit()
+            self.db.session.commit()
 
         sys.exit()
 
@@ -172,7 +179,7 @@ class Stellar(object):
 
         databases = set()
         stellar_databases = set()
-        for snapshot in db.session.query(Snapshot):
+        for snapshot in self.db.session.query(Snapshot):
             stellar_databases.add(snapshot.table_name)
 
         for row in self.raw_db.execute('''

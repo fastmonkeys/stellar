@@ -9,16 +9,7 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm.exc import MultipleResultsFound
 
 from config import config
-from database import stellar_db, db
 from datetime import datetime
-from models import Snapshot
-from operations import (
-    create_stellar_tables,
-    copy_database,
-    remove_database,
-    rename_database,
-    database_exists
-)
 import humanize
 
 
@@ -40,6 +31,8 @@ class CommandApp(object):
         getattr(self, args.command)()
 
     def list_of_tables(self):
+        from database import db
+
         for row in db.execute('''
             SELECT datname FROM pg_database
             WHERE datistemplate = false
@@ -47,6 +40,10 @@ class CommandApp(object):
             print row[0]
 
     def gc(self):
+        from database import stellar_db, db
+        from models import Snapshot
+        from operations import remove_database
+
         databases = set()
         stellar_databases = set()
         for snapshot in stellar_db.session.query(Snapshot):
@@ -65,6 +62,10 @@ class CommandApp(object):
         print "Garbage collection complete"
 
     def snapshot(self):
+        from database import stellar_db
+        from models import Snapshot
+        from operations import copy_database
+
         parser = argparse.ArgumentParser(
             description='Take a snapshot of the database'
         )
@@ -101,6 +102,9 @@ class CommandApp(object):
             stellar_db.session.commit()
 
     def list(self):
+        from database import stellar_db
+        from models import Snapshot
+
         argparse.ArgumentParser(
             description='List snapshots'
         )
@@ -118,6 +122,16 @@ class CommandApp(object):
         )
 
     def restore(self):
+        from database import stellar_db
+        from models import Snapshot
+        from operations import (
+            copy_database,
+            remove_database,
+            rename_database,
+            database_exists
+        )
+
+
         parser = argparse.ArgumentParser(
             description='Restore database from snapshot'
         )
@@ -194,6 +208,10 @@ class CommandApp(object):
             stellar_db.session.commit()
 
     def remove(self):
+        from database import stellar_db
+        from models import Snapshot
+        from operations import remove_database
+
         parser = argparse.ArgumentParser(
             description='Removes spesified snapshot'
         )
@@ -227,9 +245,34 @@ class CommandApp(object):
         stellar_db.session.commit()
         print "Deleted"
 
+    def init(self):
+        name = raw_input("Please enter project name (ex. myproject): ")
+        url = raw_input(
+            "Please enter database url (ex. postgresql://localhost:5432/): "
+        )
+        db_name = raw_input(
+            "Please enter project database name (ex. myproject): "
+        )
+
+        project_file = open('stellar.yaml', 'w')
+        project_file.write(
+            """
+project_name: '%(name)s'
+tracked_databases: ['%(db_name)s']
+url: '%(url)s'
+stellar_url: '%(url)sstellar_data'
+            """.strip() %
+            {
+                'name': name,
+                'url': url,
+                'db_name': db_name
+            }
+        )
+        project_file.close()
+        print "Wrote stellar.yaml"
+
 
 if __name__ == '__main__':
-    create_stellar_tables()
     CommandApp()
     #
     # stellar

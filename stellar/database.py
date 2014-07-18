@@ -3,7 +3,9 @@ from config import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from .operations import create_stellar_tables
 
+create_stellar_tables()
 
 stellar_db = create_engine(config['stellar_url'], echo=False)
 db = create_engine(config['url'], echo=False)

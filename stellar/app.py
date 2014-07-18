@@ -194,7 +194,8 @@ class Stellar(object):
         stellar_databases = set()
         for snapshot in self.db.session.query(Snapshot):
             for table in snapshot.tables:
-                stellar_databases.add(table.table_name)
+                stellar_databases.add(table.get_table_name('master'))
+                stellar_databases.add(table.get_table_name('slave'))
 
         for row in self.raw_db.execute('''
             SELECT datname FROM pg_database

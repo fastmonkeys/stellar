@@ -144,7 +144,7 @@ class Stellar(object):
             ):
                 print (
                     "Database stellar_%s_slave does not exist."
-                    % snapshot.table_hash
+                    % snapshot.hash
                 )
                 sys.exit(1)
             try:

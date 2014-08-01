@@ -23,7 +23,7 @@ class CommandApp(object):
         if not hasattr(self, args.command):
             print 'Unrecognized command'
             parser.print_help()
-            exit(1)
+            sys.exit(1)
         getattr(self, args.command)()
 
     def gc(self):
@@ -45,7 +45,7 @@ class CommandApp(object):
 
         if app.get_snapshot(name):
             print "Snapshot with name %s already exists" % name
-            exit(1)
+            sys.exit(1)
         else:
             def before_copy(table_name):
                 print "Snapshotting database %s" % table_name
@@ -82,7 +82,7 @@ class CommandApp(object):
                     "Couldn't find any snapshots for project %s" %
                     self.config['project_name']
                 )
-                exit(1)
+                sys.exit(1)
         else:
             snapshot = app.get_snapshot(args.name)
             if not snapshot:
@@ -90,7 +90,7 @@ class CommandApp(object):
                     "Couldn't find snapshot with name %s.\n"
                     "You can list snapshots with 'stellar list'" % args.name
                 )
-                exit(1)
+                sys.exit(1)
 
         # Check if slaves are ready
         if not snapshot.slaves_ready:
@@ -125,7 +125,7 @@ class CommandApp(object):
         snapshot = app.get_snapshot(args.name)
         if not snapshot:
             print "Couldn't find snapshot %s" % args.name
-            return
+            sys.exit(1)
 
         print "Deleting snapshot %s" % args.name
         app.remove_snapshot(snapshot)
@@ -144,12 +144,12 @@ class CommandApp(object):
         snapshot = app.get_snapshot(args.old_name)
         if not snapshot:
             print "Couldn't find snapshot %s" % args.old_name
-            return
+            sys.exit(1)
 
         new_snapshot = app.get_snapshot(args.new_name)
         if new_snapshot:
             print "Snapshot with name %s already exists" % args.new_name
-            return
+            sys.exit(1)
 
         app.rename_snapshot(snapshot, args.new_name)
         print "Renamed snapshot %s to %s" % (args.old_name, args.new_name)
@@ -187,10 +187,10 @@ def main():
     except MissingConfig:
         print "You don't have stellar.yaml configuration yet."
         print "Initialize it by running: stellar init"
-        exit(1)
+        sys.exit(1)
     except InvalidConfig, e:
         print "Your stellar.yaml configuration is wrong: %s" % e.message
-        exit(1)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

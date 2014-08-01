@@ -131,6 +131,10 @@ class Stellar(object):
         self.db.session.delete(snapshot)
         self.db.session.commit()
 
+    def rename_snapshot(self, snapshot, new_name):
+        snapshot.snapshot_name = new_name
+        self.db.session.commit()
+
     def restore(self, snapshot):
         for table in snapshot.tables:
             print "Restoring database %s" % table.table_name

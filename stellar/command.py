@@ -127,6 +127,29 @@ class CommandApp(object):
         app.remove_snapshot(snapshot)
         print "Deleted"
 
+    def rename(self):
+        parser = argparse.ArgumentParser(
+            description='Rename snapshot'
+        )
+        parser.add_argument('old_name')
+        parser.add_argument('new_name')
+        args = parser.parse_args(sys.argv[2:])
+
+        app = Stellar()
+
+        snapshot = app.get_snapshot(args.old_name)
+        if not snapshot:
+            print "Couldn't find snapshot %s" % args.old_name
+            return
+
+        new_snapshot = app.get_snapshot(args.new_name)
+        if new_snapshot:
+            print "Snapshot with name %s already exists" % args.new_name
+            return
+
+        app.rename_snapshot(snapshot, args.new_name)
+        print "Renamed snapshot %s to %s" % (args.old_name, args.new_name)
+
     def init(self):
         name = raw_input("Please enter project name (ex. myproject): ")
         url = raw_input(

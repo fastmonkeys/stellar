@@ -59,7 +59,7 @@ class CommandApp(object):
         snapshots = Stellar().get_snapshots()
 
         print '\n'.join(
-            '%s %s ago' % (
+            '%s %s' % (
                 s.snapshot_name,
                 humanize.naturaltime(datetime.utcnow() - s.created_at)
             )

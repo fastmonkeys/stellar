@@ -142,8 +142,8 @@ class Stellar(object):
                 table.get_table_name('slave')
             ):
                 print (
-                    "Database stellar_%s_slave does not exist."
-                    % snapshot.hash
+                    "Database %s does not exist."
+                    % table.get_table_name('slave')
                 )
                 sys.exit(1)
             try:

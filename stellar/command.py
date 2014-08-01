@@ -1,11 +1,11 @@
 import argparse
 import sys
+from datetime import datetime
 from time import sleep
 
 import humanize
 
 from app import Stellar
-from datetime import datetime
 from config import InvalidConfig, MissingConfig
 
 

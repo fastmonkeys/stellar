@@ -1,6 +1,3 @@
-from sqlalchemy.exc import ProgrammingError
-
-
 def terminate_database_connections(raw_conn, database):
     raw_conn.execute(
         '''
@@ -51,6 +48,7 @@ def database_exists(raw_conn, database):
             database
         )
     ).first()[0] > 0
+
 
 def rename_database(raw_conn, from_database, to_database):
     raw_conn.execute(

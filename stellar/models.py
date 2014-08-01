@@ -1,9 +1,9 @@
-import sqlalchemy as sa
-from datetime import datetime
-import uuid
 import hashlib
-from sqlalchemy.ext.declarative import declarative_base
+import uuid
+from datetime import datetime
 
+import sqlalchemy as sa
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
@@ -14,7 +14,11 @@ def get_unique_hash():
 
 class Snapshot(Base):
     __tablename__ = 'snapshot'
-    id = sa.Column(sa.Integer, sa.Sequence('snapshot_id_seq'), primary_key=True)
+    id = sa.Column(
+        sa.Integer,
+        sa.Sequence('snapshot_id_seq'),
+        primary_key=True
+    )
     snapshot_name = sa.Column(sa.String(255), nullable=False)
     project_name = sa.Column(sa.String(255), nullable=False)
     hash = sa.Column(sa.String(32), nullable=False, default=get_unique_hash)

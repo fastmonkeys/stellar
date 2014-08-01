@@ -1,11 +1,9 @@
 import logging
-import hashlib
-import uuid
 import os
 import sys
 from functools import partial
 
-from config import load_config, InvalidConfig
+from config import load_config
 from models import Snapshot, Table, Base
 from operations import (
     copy_database,
@@ -17,10 +15,7 @@ from operations import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.ext.declarative import declarative_base
-from schema import SchemaError
 
 
 logging.basicConfig()

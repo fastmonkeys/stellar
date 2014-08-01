@@ -94,17 +94,21 @@ class CommandApp(object):
 
         # Check if slaves are ready
         if not snapshot.slaves_ready:
-            sys.stdout.write(
-                'Waiting for background process(%s) to finish' %
-                snapshot.worker_pid
-            )
-            sys.stdout.flush()
-            while not snapshot.slaves_ready:
-                sys.stdout.write('.')
+            if app.is_copy_process_running(snapshot):
+                sys.stdout.write(
+                    'Waiting for background process(%s) to finish' %
+                    snapshot.worker_pid
+                )
                 sys.stdout.flush()
-                sleep(1)
-                app.db.session.refresh(snapshot)
-            print ''
+                while not snapshot.slaves_ready:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+                    sleep(1)
+                    app.db.session.refresh(snapshot)
+                print ''
+            else:
+                print 'Background process missing, doing slow restore.'
+                app.inline_slave_copy(snapshot)
 
         app.restore(snapshot)
         print "Restore complete."

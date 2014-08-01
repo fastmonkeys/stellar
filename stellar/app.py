@@ -16,6 +16,7 @@ from operations import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import ProgrammingError
+from psutil import pid_exists
 
 
 logging.basicConfig()
@@ -176,7 +177,10 @@ class Stellar(object):
         snapshot = self.db.session.query(Snapshot).get(snapshot_id)
         snapshot.worker_pid = os.getpid()
         self.db.session.commit()
+        self.inline_slave_copy(snapshot)
+        sys.exit()
 
+    def inline_slave_copy(self, snapshot):
         for table in snapshot.tables:
             self.operations.copy_database(
                 table.get_table_name('master'),
@@ -184,7 +188,9 @@ class Stellar(object):
             )
         snapshot.worker_pid = None
         self.db.session.commit()
-        sys.exit()
+
+    def is_copy_process_running(self, snapshot):
+        return pid_exists(snapshot.worker_pid)
 
     def delete_orphan_snapshots(self, after_delete=None):
         databases = set()

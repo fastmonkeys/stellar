@@ -169,16 +169,14 @@ class Stellar(object):
 
         pid = os.fork()
         if pid:
-            self.init_database()
-            snapshot = self.db.session.query(Snapshot).get(snapshot_id)
-            snapshot.worker_pid = pid
-            self.db.session.commit()
             return
 
         self.init_database()
         self.operations = Operations(self.raw_conn, self.config)
 
         snapshot = self.db.session.query(Snapshot).get(snapshot_id)
+        snapshot.worker_pid = os.getpid()
+        self.db.session.commit()
 
         for table in snapshot.tables:
             self.operations.copy_database(

@@ -20,7 +20,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 logging.basicConfig()
 
 

@@ -5,6 +5,7 @@ Stellar allows you to quickly restore database when you are e.g. writing databas
 
 ![Screenshot of Stellar terminal window](http://imgur.com/0fXXdcx.png)
 
+
 Benchmarks
 -------
 Stellar is fast. It can restore a database ~140 times faster than using the usual
@@ -17,7 +18,7 @@ How it works
 
 Stellar works by storing copies of the database in the RDBMS (named as stellar_xxx_master and stellar_xxxx_slave). When restoring the database, Stellar simply renames the database making it lot faster than the usual SQL dump. However, Stellar uses lots of storage space so you probably don't want to make too many snapshots or you will eventually run out of storage space.
 
-Due to experimental nature of this tool, it is not recommended to use this in an enviroment where you can't afford possible data loss (eg. production)
+**Warning: Please don't use Stellar if you can't afford data loss.** It's great for developing but not meant for production.
 
 How to get started
 -------

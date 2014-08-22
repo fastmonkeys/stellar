@@ -10,14 +10,24 @@ How to get started
 
 You can install Stellar with `pip`.
 
-```> pip install stellar```
+```$ pip install stellar```
 
 After that, you should go to your project folder and initialize Stellar settings. Stellar initialization wizard will help you with that.
 
-```> stellar init```
+```$ stellar init```
 
 Stellar settings are saved as 'stellar.yaml' so you probably want to add that to your `.gitignore`.
 
-```> echo stellar.yaml >> .gitignore```
+```$ echo stellar.yaml >> .gitignore```
 
 Done! :dancers:
+
+How to take a snapshot
+-------
+
+```$ stellar snapshot SNAPSHOT_NAME```
+
+How to restore from a snapshot
+-------
+
+```$ stellar restore SNAPSHOT_NAME```

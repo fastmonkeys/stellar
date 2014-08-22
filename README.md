@@ -1,7 +1,10 @@
-Stellar - Lightning fast database snapshots for development
+Stellar - Fast database snapshots for development. It's like Git for databases.
 =======
 
-Basic usage:
+![Screenshot of Stellar terminal window](http://imgur.com/0fXXdcx.png)
+
+Stellar allows you to quickly restore database when you are e.g. writing database migrations, switching branches or messing with SQL. PostreSQL and MySQL are supported.
+
 
 ```
 > stellar init

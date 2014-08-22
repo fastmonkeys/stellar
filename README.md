@@ -20,4 +20,4 @@ Stellar settings are saved as 'stellar.yaml' so you probably want to add that to
 
 ```> echo stellar.yaml >> .gitignore```
 
-Done!
+Done! :dancers:

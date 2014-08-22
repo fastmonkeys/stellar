@@ -17,7 +17,7 @@ How it works
 
 Stellar works by storing copies of the database in the RDBMS (named as stellar_xxx_master and stellar_xxxx_slave). When restoring the database, Stellar simply renames the database making it lot faster than the usual SQL dump. However, Stellar uses lots of storage space so you probably don't want to mae too many snapshots or you will eventually run out of storage space.
 
-Due to nature of the this tool, it is not recommended to use this in enviroment where you can't afford data loss (eg. production)
+Due to experimental nature of this tool, it is not recommended to use this in an enviroment where you can't afford possible data loss (eg. production)
 
 How to get started
 -------

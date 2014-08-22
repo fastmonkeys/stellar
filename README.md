@@ -1,4 +1,4 @@
-Stellar - Fast database snapshotting and restore tool for development.
+Stellar - Fast database snapshot and restore tool for development.
 =======
 
 Stellar allows you to quickly restore database when you are e.g. writing database migrations, switching branches or messing with SQL. PostgreSQL and MySQL are supported.

@@ -1,13 +1,13 @@
 Stellar - Fast database snapshots for development. It's like Git for databases.
 =======
 
-Stellar allows you to quickly restore database when you are e.g. writing database migrations, switching branches or messing with SQL. PostreSQL and MySQL are supported.
+Stellar allows you to quickly restore database when you are e.g. writing database migrations, switching branches or messing with SQL. PostgreSQL and MySQL are supported.
 
 ![Screenshot of Stellar terminal window](http://imgur.com/0fXXdcx.png)
 
 Benchmarks
 -------
-Stellar is fast. It can restore database ~140 times faster than using the usual
+Stellar is fast. It can restore a database ~140 times faster than using the usual
 pg_dump & pg_restore.
 
 ![Benchmarking database restore speed](http://imgur.com/Md1AHXa.png)

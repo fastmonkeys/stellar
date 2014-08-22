@@ -230,6 +230,21 @@ def main():
     except InvalidConfig, e:
         print "Your stellar.yaml configuration is wrong: %s" % e.message
         sys.exit(1)
+    except ImportError, e:
+        libraries = {
+            'psycopg2': 'PostreSQL',
+            'pymysql': 'MySQL',
+        }
+        for library, name in libraries.items():
+            if str(e) == 'No module named %s' % library:
+                print "Python library %s is required for %s support." % (
+                    library,
+                    name
+                )
+                print "You can install it with pip:"
+                print "pip install %s" % library
+                sys.exit(1)
+        raise
 
 if __name__ == '__main__':
     main()

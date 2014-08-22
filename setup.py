@@ -48,5 +48,6 @@ setup(
         'pytest',
         'schema',
         'click',
+        'SQLAlchemy-Utils',
     ]
 )

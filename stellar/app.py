@@ -20,7 +20,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 logging.basicConfig()
 
 
@@ -41,7 +41,6 @@ class Stellar(object):
     def __init__(self):
         self.load_config()
         self.init_database()
-        self.operations = Operations(self.raw_conn, self.config)
 
     def load_config(self):
         self.config = load_config()
@@ -49,6 +48,8 @@ class Stellar(object):
     def init_database(self):
         self.raw_db = create_engine(self.config['url'], echo=False)
         self.raw_conn = self.raw_db.connect()
+        self.operations = Operations(self.raw_conn, self.config)
+
         try:
             self.raw_conn.connection.set_isolation_level(0)
         except AttributeError:
@@ -65,10 +66,10 @@ class Stellar(object):
         # logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
 
     def create_stellar_database(self):
-        try:
-            self.raw_conn.execute('CREATE DATABASE "stellar_data"')
+        if not self.operations.database_exists('stellar_data'):
+            self.operations.create_database('stellar_data')
             return True
-        except ProgrammingError:
+        else:
             return False
 
     def create_stellar_tables(self):

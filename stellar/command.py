@@ -11,7 +11,7 @@ from sqlalchemy.exc import OperationalError
 
 from app import Stellar, __version__
 from config import InvalidConfig, MissingConfig
-from operations import database_exists, list_of_databases
+from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
 @click.group()
@@ -66,7 +66,7 @@ def list():
 
 
 @stellar.command()
-@click.argument('name')
+@click.argument('name', required=False)
 def restore(name):
     """Restores the database from a snapshot"""
     app = Stellar()
@@ -155,18 +155,28 @@ def init():
             "Please enter the url for your database.\n\n"
             "For example:\n"
             "PostreSQL: postgresql://localhost:5432/\n"
-            "MySQL: mysql://scott:tiger@localhost/"
+            "MySQL: mysql+pymysql://root@localhost/"
         )
+        if not url.endswith('/'):
+            url = url + '/'
 
         engine = create_engine(url, echo=False)
         try:
             conn = engine.connect()
-        except sqlalchemy.exc.OperationalError:
+        except OperationalError:
             print "Could not connect to database: %s" % url
             print "Make sure database process is running and try again."
             print
         else:
             break
+
+    if engine.dialect.name not in SUPPORTED_DIALECTS:
+        print "Your engine dialect %s is not supported." % (
+            engine.dialect.name
+        )
+        print "Supported dialects: %s" % (
+            ', '.join(SUPPORTED_DIALECTS)
+        )
 
     while True:
         click.echo("You have the following databases: %s" % ', '.join([
@@ -205,6 +215,8 @@ stellar_url: '%(url)sstellar_data'
 
     print "Wrote stellar.yaml"
     print
+    if engine.dialect.name == 'mysql':
+        print "Warning: MySQL support is still in beta."
     print "Tip: You probably want to take a snapshot: stellar snapshot"
 
 

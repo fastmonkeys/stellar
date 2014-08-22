@@ -5,7 +5,7 @@ from time import sleep
 
 import humanize
 
-from app import Stellar
+from app import Stellar, __version__
 from config import InvalidConfig, MissingConfig
 
 
@@ -25,6 +25,9 @@ class CommandApp(object):
             parser.print_help()
             sys.exit(1)
         getattr(self, args.command)()
+
+    def version(self):
+        print "Stellar %s" % __version__
 
     def gc(self):
         def after_delete(database):

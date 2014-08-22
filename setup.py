@@ -49,5 +49,6 @@ setup(
         'schema',
         'click',
         'SQLAlchemy-Utils',
+        'psutil',
     ]
 )

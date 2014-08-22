@@ -11,12 +11,15 @@ v = open(os.path.join(os.path.dirname(__file__), 'stellar', 'app.py'))
 VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
 v.close()
 
+with open("README.md") as readme:
+    long_description = readme.read()
+
 setup(
     name='stellar',
     description=(
         'stellar is a tool for creating and restoring database snapshots'
     ),
-    long_description=open("README.md").read(),
+    long_description=long_description,
     version=VERSION,
     url='https://github.com/fastmonkeys/stellar',
     license='BSD',

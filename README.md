@@ -7,7 +7,7 @@ Stellar allows you to quickly restore database when you are e.g. writing databas
 
 Benchmarks
 -------
-Stellar is fast. It can restore database ~140 times faster than using the usual
+Stellar is fast. It can restore a database ~140 times faster than using the usual
 pg_dump & pg_restore.
 
 ![Benchmarking database restore speed](http://imgur.com/Md1AHXa.png)

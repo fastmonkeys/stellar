@@ -12,6 +12,7 @@ from operations import (
     remove_database,
     rename_database,
     terminate_database_connections,
+    list_of_databases,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -33,6 +34,7 @@ class Operations(object):
         self.database_exists = partial(database_exists, raw_connection)
         self.rename_database = partial(rename_database, raw_connection)
         self.remove_database = partial(remove_database, raw_connection)
+        self.list_of_databases = partial(list_of_databases, raw_connection)
 
 
 class Stellar(object):
@@ -194,18 +196,13 @@ class Stellar(object):
         return pid_exists(snapshot.worker_pid)
 
     def delete_orphan_snapshots(self, after_delete=None):
-        databases = set()
         stellar_databases = set()
         for snapshot in self.db.session.query(Snapshot):
             for table in snapshot.tables:
                 stellar_databases.add(table.get_table_name('master'))
                 stellar_databases.add(table.get_table_name('slave'))
 
-        for row in self.raw_db.execute('''
-            SELECT datname FROM pg_database
-            WHERE datistemplate = false
-        '''):
-            databases.add(row[0])
+        databases = set(self.operations.list_of_databases())
 
         for database in filter(
             lambda database: (

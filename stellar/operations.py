@@ -72,3 +72,12 @@ def remove_database(raw_conn, database):
             database
         )
     )
+
+def list_of_databases(raw_conn):
+    return [
+        row[0]
+        for row in raw_conn.execute('''
+            SELECT datname FROM pg_database
+            WHERE datistemplate = false
+        ''')
+    ]

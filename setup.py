@@ -47,5 +47,6 @@ setup(
         'humanize',
         'pytest',
         'schema',
+        'click',
     ]
 )

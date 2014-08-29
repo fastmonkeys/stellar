@@ -178,20 +178,23 @@ def init():
             ', '.join(SUPPORTED_DIALECTS)
         )
 
-    while True:
-        click.echo("You have the following databases: %s" % ', '.join([
-            db for db in list_of_databases(conn)
-            if not db.startswith('stellar_')
-        ]))
+    if url.count('/') == 3 and url.endswith('/'):
+        while True:
+            click.echo("You have the following databases: %s" % ', '.join([
+                db for db in list_of_databases(conn)
+                if not db.startswith('stellar_')
+            ]))
 
-        db_name = click.prompt(
-            "Please enter the name of the database (eg. projectdb)"
-        )
-        if database_exists(conn, db_name):
-            break
-        else:
-            print "Could not find database %s" % db_name
-            print
+            db_name = click.prompt(
+                "Please enter the name of the database (eg. projectdb)"
+            )
+            if database_exists(conn, db_name):
+                break
+            else:
+                print "Could not find database %s" % db_name
+                print
+    else:
+        db_name = url.rsplit('/', 1)[-1]
 
     name = click.prompt(
         'Please enter your project name (used internally, eg. %s)' % db_name,

@@ -74,16 +74,20 @@ def copy_database(raw_conn, from_database, to_database):
 
 
 def database_exists(raw_conn, database):
-    return sqlalchemy_utils.functions.database_exists(
-        '%s%s' % (raw_conn.engine.url, database)
-    )
+    if not str(raw_conn.engine.url).endswith(database):
+        url = '%s%s' % (raw_conn.engine.url, database)
+    else:
+        url = raw_conn.engine.url
+    return sqlalchemy_utils.functions.database_exists(url)
 
 
 def remove_database(raw_conn, database):
+    if not str(raw_conn.engine.url).endswith(database):
+        url = '%s%s' % (raw_conn.engine.url, database)
+    else:
+        url = raw_conn.engine.url
     terminate_database_connections(raw_conn, database)
-    return sqlalchemy_utils.functions.drop_database(
-        '%s%s' % (raw_conn.engine.url, database)
-    )
+    return sqlalchemy_utils.functions.drop_database(url)
 
 
 def rename_database(raw_conn, from_database, to_database):

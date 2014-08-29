@@ -157,7 +157,7 @@ def init():
             "PostreSQL: postgresql://localhost:5432/\n"
             "MySQL: mysql+pymysql://root@localhost/"
         )
-        if not url.endswith('/'):
+        if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
         engine = create_engine(url, echo=False)

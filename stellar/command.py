@@ -163,9 +163,9 @@ def init():
         engine = create_engine(url, echo=False)
         try:
             conn = engine.connect()
-        except OperationalError:
+        except OperationalError, err:
             print "Could not connect to database: %s" % url
-            print "Make sure database process is running and try again."
+            print "Error message: %s" % err.message
             print
         else:
             break

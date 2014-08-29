@@ -171,7 +171,7 @@ class Stellar(object):
         self.raw_db.session.close()
         self.db.session.close()
 
-        pid = os.fork()
+        pid = os.fork() if hasattr(os, 'fork') else None
         if pid:
             return
 

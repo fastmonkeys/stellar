@@ -163,7 +163,7 @@ def init():
         engine = create_engine(url, echo=False)
         try:
             conn = engine.connect()
-        except OperationalError, err:
+        except OperationalError as err:
             print "Could not connect to database: %s" % url
             print "Error message: %s" % err.message
             print
@@ -230,10 +230,10 @@ def main():
         print "You don't have stellar.yaml configuration yet."
         print "Initialize it by running: stellar init"
         sys.exit(1)
-    except InvalidConfig, e:
+    except InvalidConfig as e:
         print "Your stellar.yaml configuration is wrong: %s" % e.message
         sys.exit(1)
-    except ImportError, e:
+    except ImportError as e:
         libraries = {
             'psycopg2': 'PostreSQL',
             'pymysql': 'MySQL',

@@ -147,6 +147,22 @@ def rename(old_name, new_name):
 
 
 @stellar.command()
+@click.argument('name')
+def replace(name):
+    """Replaces a snapshot"""
+    app = Stellar()
+
+    snapshot = app.get_snapshot(name)
+    if not snapshot:
+        print "Couldn't find snapshot %s" % name
+        sys.exit(1)
+
+    app.remove_snapshot(snapshot)
+    app.create_snapshot(name)
+    print "Replaced snapshot %s" % name
+
+
+@stellar.command()
 def init():
     """Initializes Stellar configuration."""
     while True:

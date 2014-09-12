@@ -12,14 +12,17 @@ class NotSupportedDatabase(Exception):
 
 def terminate_database_connections(raw_conn, database):
     if raw_conn.engine.dialect.name == 'postgresql':
+        version = map(int, raw_conn.execute('SHOW server_version;').first()[0].split('.'))
+        pid_column = 'pid' if (version[0] >= 9 and version[1] >= 2) else 'procpid'
+
         raw_conn.execute(
             '''
-                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
                 FROM pg_stat_activity
                 WHERE
-                    pg_stat_activity.datname = '%s' AND
-                    pid <> pg_backend_pid();
-            ''' % database
+                    pg_stat_activity.datname = '%(database)s' AND
+                    %(pid_column)s <> pg_backend_pid();
+            ''' % {'pid_column': pid_column, 'database': database}
         )
     else:
         # NotYetImplemented

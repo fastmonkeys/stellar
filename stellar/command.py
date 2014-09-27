@@ -1,6 +1,4 @@
-import argparse
 import sys
-import os
 from datetime import datetime
 from time import sleep
 
@@ -10,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from app import Stellar, __version__
-from config import InvalidConfig, MissingConfig
+from config import InvalidConfig, MissingConfig, load_config
 from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
@@ -18,6 +16,7 @@ from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 def stellar():
     """Fast database snapshots for development. It's like Git for databases."""
     pass
+
 
 @stellar.command()
 def version():
@@ -76,7 +75,7 @@ def restore(name):
         if not snapshot:
             print (
                 "Couldn't find any snapshots for project %s" %
-                self.config['project_name']
+                load_config()['project_name']
             )
             sys.exit(1)
     else:
@@ -148,13 +147,29 @@ def rename(old_name, new_name):
 
 
 @stellar.command()
+@click.argument('name')
+def replace(name):
+    """Replaces a snapshot"""
+    app = Stellar()
+
+    snapshot = app.get_snapshot(name)
+    if not snapshot:
+        print "Couldn't find snapshot %s" % name
+        sys.exit(1)
+
+    app.remove_snapshot(snapshot)
+    app.create_snapshot(name)
+    print "Replaced snapshot %s" % name
+
+
+@stellar.command()
 def init():
     """Initializes Stellar configuration."""
     while True:
         url = click.prompt(
             "Please enter the url for your database.\n\n"
             "For example:\n"
-            "PostreSQL: postgresql://localhost:5432/\n"
+            "PostgreSQL: postgresql://localhost:5432/\n"
             "MySQL: mysql+pymysql://root@localhost/"
         )
         if url.count('/') == 2 and not url.endswith('/'):

@@ -195,6 +195,7 @@ def init():
                 print
     else:
         db_name = url.rsplit('/', 1)[-1]
+        url = url.rsplit('/', 1)[0] + '/'
 
     name = click.prompt(
         'Please enter your project name (used internally, eg. %s)' % db_name,

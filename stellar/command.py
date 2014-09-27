@@ -157,15 +157,15 @@ def init():
             "PostreSQL: postgresql://localhost:5432/\n"
             "MySQL: mysql+pymysql://root@localhost/"
         )
-        if not url.endswith('/'):
+        if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
         engine = create_engine(url, echo=False)
         try:
             conn = engine.connect()
-        except OperationalError:
+        except OperationalError as err:
             print "Could not connect to database: %s" % url
-            print "Make sure database process is running and try again."
+            print "Error message: %s" % err.message
             print
         else:
             break
@@ -178,20 +178,24 @@ def init():
             ', '.join(SUPPORTED_DIALECTS)
         )
 
-    while True:
-        click.echo("You have the following databases: %s" % ', '.join([
-            db for db in list_of_databases(conn)
-            if not db.startswith('stellar_')
-        ]))
+    if url.count('/') == 3 and url.endswith('/'):
+        while True:
+            click.echo("You have the following databases: %s" % ', '.join([
+                db for db in list_of_databases(conn)
+                if not db.startswith('stellar_')
+            ]))
 
-        db_name = click.prompt(
-            "Please enter the name of the database (eg. projectdb)"
-        )
-        if database_exists(conn, db_name):
-            break
-        else:
-            print "Could not find database %s" % db_name
-            print
+            db_name = click.prompt(
+                "Please enter the name of the database (eg. projectdb)"
+            )
+            if database_exists(conn, db_name):
+                break
+            else:
+                print "Could not find database %s" % db_name
+                print
+    else:
+        db_name = url.rsplit('/', 1)[-1]
+        url = url.rsplit('/', 1)[0] + '/'
 
     name = click.prompt(
         'Please enter your project name (used internally, eg. %s)' % db_name,
@@ -227,10 +231,10 @@ def main():
         print "You don't have stellar.yaml configuration yet."
         print "Initialize it by running: stellar init"
         sys.exit(1)
-    except InvalidConfig, e:
+    except InvalidConfig as e:
         print "Your stellar.yaml configuration is wrong: %s" % e.message
         sys.exit(1)
-    except ImportError, e:
+    except ImportError as e:
         libraries = {
             'psycopg2': 'PostreSQL',
             'pymysql': 'MySQL',

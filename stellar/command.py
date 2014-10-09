@@ -4,21 +4,25 @@ from time import sleep
 
 import humanize
 import click
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from app import Stellar, __version__
-from config import InvalidConfig, MissingConfig, load_config
+from config import InvalidConfig, MissingConfig, load_config, save_config
 from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
 def upgrade_from_old_version(app):
-    if app.is_old_database():
-        print "Upgrading from old Stellar version..."
-        def after_rename(old_name, new_name):
-            print "* Renamed %s to %s" % (old_name, new_name)
-        app.update_database_names_to_new_version(after_rename=after_rename)
+    if app.config['migrate_from_0_3_2']:
+        if app.is_old_database():
+            print "Upgrading from old Stellar version..."
+            def after_rename(old_name, new_name):
+                print "* Renamed %s to %s" % (old_name, new_name)
+            app.update_database_names_to_new_version(after_rename=after_rename)
 
+        app.config['migrate_from_0_3_2'] = False
+        save_config(app.config)
 
 def get_app():
     app = Stellar()

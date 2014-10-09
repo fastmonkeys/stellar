@@ -1,4 +1,8 @@
+import logging
+
 import sqlalchemy_utils
+
+logger = logging.getLogger(__name__)
 
 
 SUPPORTED_DIALECTS = (
@@ -21,6 +25,7 @@ def get_engine_url(raw_conn, database):
 
 
 def terminate_database_connections(raw_conn, database):
+    logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
         version = map(int, raw_conn.execute('SHOW server_version;').first()[0].split('.'))
         pid_column = 'pid' if (version[0] >= 9 and version[1] >= 2) else 'procpid'
@@ -40,12 +45,14 @@ def terminate_database_connections(raw_conn, database):
 
 
 def create_database(raw_conn, database):
+    logger.debug('create_database(%r)', database)
     return sqlalchemy_utils.functions.create_database(
         get_engine_url(raw_conn, database)
     )
 
 
 def copy_database(raw_conn, from_database, to_database):
+    logger.debug('copy_database(%r, %r)', from_database, to_database)
     terminate_database_connections(raw_conn, from_database)
 
     if raw_conn.engine.dialect.name == 'postgresql':
@@ -87,12 +94,14 @@ def copy_database(raw_conn, from_database, to_database):
 
 
 def database_exists(raw_conn, database):
+    logger.debug('database_exists(%r)', database)
     return sqlalchemy_utils.functions.database_exists(
         get_engine_url(raw_conn, database)
     )
 
 
 def remove_database(raw_conn, database):
+    logger.debug('remove_database(%r)', database)
     terminate_database_connections(raw_conn, database)
     return sqlalchemy_utils.functions.drop_database(
         get_engine_url(raw_conn, database)
@@ -100,6 +109,7 @@ def remove_database(raw_conn, database):
 
 
 def rename_database(raw_conn, from_database, to_database):
+    logger.debug('rename_database(%r, %r)', from_database, to_database)
     terminate_database_connections(raw_conn, from_database)
     if raw_conn.engine.dialect.name == 'postgresql':
         raw_conn.execute(
@@ -128,6 +138,7 @@ def rename_database(raw_conn, from_database, to_database):
 
 
 def list_of_databases(raw_conn):
+    logger.debug('list_of_databases()')
     if raw_conn.engine.dialect.name == 'postgresql':
         return [
             row[0]

@@ -57,11 +57,13 @@ class Table(Base):
                 postfix
             )
         else:
-            return 'stellar_%s' % hashlib.md5(str([
-                self.table_name,
-                self.snapshot.hash,
-                postfix
-            ])).hexdigest()[0:16]
+            return 'stellar_%s' % hashlib.md5(
+                '%s|%s|%s' % (
+                    self.table_name,
+                    self.snapshot.hash,
+                    postfix
+                )
+            ).hexdigest()[0:16]
 
     def __repr__(self):
         return "<Table(table_name=%r)>" % (

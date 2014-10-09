@@ -49,5 +49,5 @@ def load_config():
 
     try:
         return schema.validate(config)
-    except SchemaError, e:
+    except SchemaError as e:
         raise InvalidConfig(e)

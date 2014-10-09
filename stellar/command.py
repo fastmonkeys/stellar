@@ -21,14 +21,14 @@ def stellar():
 @stellar.command()
 def version():
     """Shows version number"""
-    print "Stellar %s" % __version__
+    click.echo("Stellar %s" % __version__)
 
 
 @stellar.command()
 def gc():
     """Deletes old stellar tables that are not used anymore"""
     def after_delete(database):
-        print "Deleted table %s" % database
+        click.echo("Deleted table %s" % database)
 
     app = Stellar()
     app.delete_orphan_snapshots(after_delete)
@@ -42,11 +42,11 @@ def snapshot(name):
     name = name or app.default_snapshot_name
 
     if app.get_snapshot(name):
-        print "Snapshot with name %s already exists" % name
+        click.echo("Snapshot with name %s already exists" % name)
         sys.exit(1)
     else:
         def before_copy(table_name):
-            print "Snapshotting database %s" % table_name
+            click.echo("Snapshotting database %s" % table_name)
         app.create_snapshot(name, before_copy=before_copy)
 
 
@@ -55,13 +55,13 @@ def list():
     """Returns a list of snapshots"""
     snapshots = Stellar().get_snapshots()
 
-    print '\n'.join(
+    click.echo('\n'.join(
         '%s: %s' % (
             s.snapshot_name,
             humanize.naturaltime(datetime.utcnow() - s.created_at)
         )
         for s in snapshots
-    )
+    ))
 
 
 @stellar.command()
@@ -73,7 +73,7 @@ def restore(name):
     if not name:
         snapshot = app.get_latest_snapshot()
         if not snapshot:
-            print (
+            click.echo(
                 "Couldn't find any snapshots for project %s" %
                 load_config()['project_name']
             )
@@ -81,7 +81,7 @@ def restore(name):
     else:
         snapshot = app.get_snapshot(name)
         if not snapshot:
-            print (
+            click.echo(
                 "Couldn't find snapshot with name %s.\n"
                 "You can list snapshots with 'stellar list'" % name
             )
@@ -100,13 +100,13 @@ def restore(name):
                 sys.stdout.flush()
                 sleep(1)
                 app.db.session.refresh(snapshot)
-            print ''
+            click.echo('')
         else:
-            print 'Background process missing, doing slow restore.'
+            click.echo('Background process missing, doing slow restore.')
             app.inline_slave_copy(snapshot)
 
     app.restore(snapshot)
-    print "Restore complete."
+    click.echo('Restore complete.')
 
 
 @stellar.command()
@@ -117,12 +117,12 @@ def remove(name):
 
     snapshot = app.get_snapshot(name)
     if not snapshot:
-        print "Couldn't find snapshot %s" % name
+        click.echo("Couldn't find snapshot %s" % name)
         sys.exit(1)
 
-    print "Deleting snapshot %s" % name
+    click.echo("Deleting snapshot %s" % name)
     app.remove_snapshot(snapshot)
-    print "Deleted"
+    click.echo("Deleted")
 
 
 @stellar.command()
@@ -134,16 +134,16 @@ def rename(old_name, new_name):
 
     snapshot = app.get_snapshot(old_name)
     if not snapshot:
-        print "Couldn't find snapshot %s" % old_name
+        click.echo("Couldn't find snapshot %s" % old_name)
         sys.exit(1)
 
     new_snapshot = app.get_snapshot(new_name)
     if new_snapshot:
-        print "Snapshot with name %s already exists" % new_name
+        click.echo("Snapshot with name %s already exists" % new_name)
         sys.exit(1)
 
     app.rename_snapshot(snapshot, new_name)
-    print "Renamed snapshot %s to %s" % (old_name, new_name)
+    click.echo("Renamed snapshot %s to %s" % (old_name, new_name))
 
 
 @stellar.command()
@@ -154,12 +154,12 @@ def replace(name):
 
     snapshot = app.get_snapshot(name)
     if not snapshot:
-        print "Couldn't find snapshot %s" % name
+        click.echo("Couldn't find snapshot %s" % name)
         sys.exit(1)
 
     app.remove_snapshot(snapshot)
     app.create_snapshot(name)
-    print "Replaced snapshot %s" % name
+    click.echo("Replaced snapshot %s" % name)
 
 
 @stellar.command()
@@ -179,19 +179,19 @@ def init():
         try:
             conn = engine.connect()
         except OperationalError as err:
-            print "Could not connect to database: %s" % url
-            print "Error message: %s" % err.message
-            print
+            click.echo("Could not connect to database: %s" % url)
+            click.echo("Error message: %s" % err.message)
+            click.echo('')
         else:
             break
 
     if engine.dialect.name not in SUPPORTED_DIALECTS:
-        print "Your engine dialect %s is not supported." % (
+        click.echo("Your engine dialect %s is not supported." % (
             engine.dialect.name
-        )
-        print "Supported dialects: %s" % (
+        ))
+        click.echo("Supported dialects: %s" % (
             ', '.join(SUPPORTED_DIALECTS)
-        )
+        ))
 
     if url.count('/') == 3 and url.endswith('/'):
         while True:
@@ -206,8 +206,8 @@ def init():
             if database_exists(conn, db_name):
                 break
             else:
-                print "Could not find database %s" % db_name
-                print
+                click.echo("Could not find database %s" % db_name)
+                click.echo('')
     else:
         db_name = url.rsplit('/', 1)[-1]
         url = url.rsplit('/', 1)[0] + '/'
@@ -232,22 +232,22 @@ stellar_url: '%(url)sstellar_data'
             }
         )
 
-    print "Wrote stellar.yaml"
-    print
+    click.echo("Wrote stellar.yaml")
+    click.echo('')
     if engine.dialect.name == 'mysql':
-        print "Warning: MySQL support is still in beta."
-    print "Tip: You probably want to take a snapshot: stellar snapshot"
+        click.echo("Warning: MySQL support is still in beta.")
+    click.echo("Tip: You probably want to take a snapshot: stellar snapshot")
 
 
 def main():
     try:
         stellar()
     except MissingConfig:
-        print "You don't have stellar.yaml configuration yet."
-        print "Initialize it by running: stellar init"
+        click.echo("You don't have stellar.yaml configuration yet.")
+        click.echo("Initialize it by running: stellar init")
         sys.exit(1)
     except InvalidConfig as e:
-        print "Your stellar.yaml configuration is wrong: %s" % e.message
+        click.echo("Your stellar.yaml configuration is wrong: %s" % e.message)
         sys.exit(1)
     except ImportError as e:
         libraries = {
@@ -256,24 +256,24 @@ def main():
         }
         for library, name in libraries.items():
             if str(e) == 'No module named %s' % library:
-                print "Python library %s is required for %s support." % (
+                click.echo("Python library %s is required for %s support." %
                     library,
                     name
                 )
-                print "You can install it with pip:"
-                print "pip install %s" % library
+                click.echo("You can install it with pip:")
+                click.echo("pip install %s" % library)
                 sys.exit(1)
             elif str(e) == 'No module named MySQLdb':
-                print (
+                click.echo(
                     "MySQLdb binary drivers are required for MySQL support. "
                     "You can try installing it with these instructions: "
                     "http://stackoverflow.com/questions/454854/no-module-named"
                     "-mysqldb"
                 )
-                print
-                print "Alternatively you can use pymysql instead:"
-                print "1. Install it first: pip install pymysql"
-                print (
+                click.echo('')
+                click.echo("Alternatively you can use pymysql instead:")
+                click.echo("1. Install it first: pip install pymysql")
+                click.echo(
                     "2. Specify database url as "
                     "mysql+pymysql://root@localhost/ and not as "
                     "mysql://root@localhost/"

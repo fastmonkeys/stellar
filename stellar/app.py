@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import click
 from functools import partial
 
 from config import load_config
@@ -142,11 +143,11 @@ class Stellar(object):
 
     def restore(self, snapshot):
         for table in snapshot.tables:
-            print "Restoring database %s" % table.table_name
+            click.echo("Restoring database %s" % table.table_name)
             if not self.operations.database_exists(
                 table.get_table_name('slave')
             ):
-                print (
+                click.echo(
                     "Database %s does not exist."
                     % table.get_table_name('slave')
                 )

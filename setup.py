@@ -7,9 +7,8 @@ from setuptools import setup, find_packages
 
 # https://bitbucket.org/zzzeek/alembic/raw/f38eaad4a80d7e3d893c3044162971971ae0
 # 09bf/setup.py
-v = open(os.path.join(os.path.dirname(__file__), 'stellar', 'app.py'))
-VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
-v.close()
+with open(os.path.join(os.path.dirname(__file__), 'stellar', 'app.py')) as app_file
+    VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(app_file.read()).group(1)
 
 with open("README.md") as readme:
     long_description = readme.read()

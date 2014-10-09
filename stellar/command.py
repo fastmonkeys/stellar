@@ -16,9 +16,9 @@ from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 def upgrade_from_old_version(app):
     if app.config['migrate_from_0_3_2']:
         if app.is_old_database():
-            print "Upgrading from old Stellar version..."
+            click.echo('Upgrading from old Stellar version...')
             def after_rename(old_name, new_name):
-                print "* Renamed %s to %s" % (old_name, new_name)
+                click.echo('* Renamed %s to %s' % (old_name, new_name))
             app.update_database_names_to_new_version(after_rename=after_rename)
 
         app.config['migrate_from_0_3_2'] = False

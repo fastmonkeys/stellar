@@ -1,6 +1,11 @@
 Stellar - Fast database snapshot and restore tool for development.
 =======
 
+[![Build Status](https://travis-ci.org/fastmonkeys/stellar.svg?branch=master)](https://travis-ci.org/fastmonkeys/stellar)
+![](http://img.shields.io/pypi/dm/stellar.svg)
+![](http://img.shields.io/pypi/v/stellar.svg)
+
+
 Stellar allows you to quickly restore database when you are e.g. writing database migrations, switching branches or messing with SQL. PostgreSQL and MySQL are supported.
 
 ![Screenshot of Stellar terminal window](http://imgur.com/0fXXdcx.png)

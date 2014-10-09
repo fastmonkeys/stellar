@@ -13,7 +13,7 @@ class MissingConfig(Exception):
 
 
 default_config = {
-    'logging': 20,
+    'logging': 30,
     'migrate_from_0_3_2': True
 }
 schema = Schema({

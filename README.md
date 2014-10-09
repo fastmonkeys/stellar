@@ -1,8 +1,8 @@
 Stellar - Fast database snapshot and restore tool for development.
 =======
 
-[![Build Status](https://travis-ci.org/fastmonkeys/stellar.svg?branch=master)](https://travis-ci.org/fastmonkeys/stellar)
-![](http://img.shields.io/pypi/dm/stellar.svg)
+[![Build Status](https://travis-ci.org/fastmonkeys/stellar.svg?branch=master)](https://travis-ci.org/fastmonkeys/stellar)&nbsp;
+![](http://img.shields.io/pypi/dm/stellar.svg)&nbsp;
 ![](http://img.shields.io/pypi/v/stellar.svg)
 
 

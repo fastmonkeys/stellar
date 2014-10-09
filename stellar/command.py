@@ -7,9 +7,9 @@ import click
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from .app import Stellar, __version__
-from .config import InvalidConfig, MissingConfig, load_config
-from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
+from stellar.app import Stellar, __version__
+from stellar.config import InvalidConfig, MissingConfig, load_config
+from stellar.operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
 @click.group()

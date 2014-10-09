@@ -4,9 +4,9 @@ import sys
 import click
 from functools import partial
 
-from .config import load_config
-from .models import Snapshot, Table, Base
-from .operations import (
+from stellar.config import load_config
+from stellar.models import Snapshot, Table, Base
+from stellar.operations import (
     copy_database,
     create_database,
     database_exists,

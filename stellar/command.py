@@ -263,6 +263,22 @@ def main():
                 print "You can install it with pip:"
                 print "pip install %s" % library
                 sys.exit(1)
+            elif str(e) == 'No module named MySQLdb':
+                print (
+                    "MySQLdb binary drivers are required for MySQL support. "
+                    "You can try installing it with these instructions: "
+                    "http://stackoverflow.com/questions/454854/no-module-named"
+                    "-mysqldb"
+                )
+                print
+                print "Alternatively you can use pymysql instead:"
+                print "1. Install it first: pip install pymysql"
+                print (
+                    "2. Specify database url as "
+                    "mysql+pymysql://root@localhost/ and not as "
+                    "mysql://root@localhost/"
+                )
+                sys.exit(1)
         raise
 
 if __name__ == '__main__':

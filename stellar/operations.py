@@ -89,6 +89,10 @@ def copy_database(raw_conn, from_database, to_database):
                 from_database,
                 row[0]
             ))
+            raw_conn.execute('ALTER TABLE %s.%s ENABLE KEYS' % (
+                to_database,
+                row[0]
+            ))
     else:
         raise NotSupportedDatabase()
 

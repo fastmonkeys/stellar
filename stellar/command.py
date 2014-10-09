@@ -7,9 +7,23 @@ import click
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from stellar.app import Stellar, __version__
-from stellar.config import InvalidConfig, MissingConfig, load_config
-from stellar.operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
+from app import Stellar, __version__
+from config import InvalidConfig, MissingConfig, load_config
+from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
+
+
+def upgrade_from_old_version(app):
+    if app.is_old_database():
+        print "Upgrading from old Stellar version..."
+        def after_rename(old_name, new_name):
+            print "* Renamed %s to %s" % (old_name, new_name)
+        app.update_database_names_to_new_version(after_rename=after_rename)
+
+
+def get_app():
+    app = Stellar()
+    upgrade_from_old_version(app)
+    return app
 
 
 @click.group()
@@ -30,7 +44,8 @@ def gc():
     def after_delete(database):
         click.echo("Deleted table %s" % database)
 
-    app = Stellar()
+    app = get_app()
+    upgrade_from_old_version(app)
     app.delete_orphan_snapshots(after_delete)
 
 
@@ -38,7 +53,8 @@ def gc():
 @click.argument('name', required=False)
 def snapshot(name):
     """Takes a snapshot of the database"""
-    app = Stellar()
+    app = get_app()
+    upgrade_from_old_version(app)
     name = name or app.default_snapshot_name
 
     if app.get_snapshot(name):
@@ -53,7 +69,7 @@ def snapshot(name):
 @stellar.command()
 def list():
     """Returns a list of snapshots"""
-    snapshots = Stellar().get_snapshots()
+    snapshots = get_app().get_snapshots()
 
     click.echo('\n'.join(
         '%s: %s' % (
@@ -68,7 +84,7 @@ def list():
 @click.argument('name', required=False)
 def restore(name):
     """Restores the database from a snapshot"""
-    app = Stellar()
+    app = get_app()
 
     if not name:
         snapshot = app.get_latest_snapshot()
@@ -113,7 +129,7 @@ def restore(name):
 @click.argument('name')
 def remove(name):
     """Removes a snapshot"""
-    app = Stellar()
+    app = get_app()
 
     snapshot = app.get_snapshot(name)
     if not snapshot:
@@ -130,7 +146,7 @@ def remove(name):
 @click.argument('new_name')
 def rename(old_name, new_name):
     """Renames a snapshot"""
-    app = Stellar()
+    app = get_app()
 
     snapshot = app.get_snapshot(old_name)
     if not snapshot:
@@ -150,7 +166,7 @@ def rename(old_name, new_name):
 @click.argument('name')
 def replace(name):
     """Replaces a snapshot"""
-    app = Stellar()
+    app = get_app()
 
     snapshot = app.get_snapshot(name)
     if not snapshot:

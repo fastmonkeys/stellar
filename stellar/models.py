@@ -44,17 +44,24 @@ class Table(Base):
     )
     snapshot = sa.orm.relationship(Snapshot, backref='tables')
 
-    def get_table_name(self, postfix):
+    def get_table_name(self, postfix, old=False):
         if not self.snapshot:
             raise Exception('Table name requires snapshot')
         if not self.snapshot.hash:
             raise Exception('Snapshot hash is empty.')
 
-        return 'stellar_%s_%s_%s' % (
-            self.table_name,
-            self.snapshot.hash,
-            postfix
-        )
+        if old:
+            return 'stellar_%s_%s_%s' % (
+                self.table_name,
+                self.snapshot.hash,
+                postfix
+            )
+        else:
+            return 'stellar_%s' % hashlib.md5(str([
+                self.table_name,
+                self.snapshot.hash,
+                postfix
+            ])).hexdigest()[0:16]
 
     def __repr__(self):
         return "<Table(table_name=%r)>" % (

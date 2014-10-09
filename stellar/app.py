@@ -4,9 +4,9 @@ import sys
 import click
 from functools import partial
 
-from stellar.config import load_config
-from stellar.models import Snapshot, Table, Base
-from stellar.operations import (
+from config import load_config
+from models import Snapshot, Table, Base
+from operations import (
     copy_database,
     create_database,
     database_exists,
@@ -196,6 +196,26 @@ class Stellar(object):
 
     def is_copy_process_running(self, snapshot):
         return pid_exists(snapshot.worker_pid)
+
+    def is_old_database(self):
+        for snapshot in self.db.session.query(Snapshot):
+            for table in snapshot.tables:
+                for postfix in ('master', 'slave'):
+                    old_name = table.get_table_name(postfix=postfix, old=True)
+                    if self.operations.database_exists(old_name):
+                        return True
+        return False
+
+    def update_database_names_to_new_version(self, after_rename=None):
+        for snapshot in self.db.session.query(Snapshot):
+            for table in snapshot.tables:
+                for postfix in ('master', 'slave'):
+                    old_name = table.get_table_name(postfix=postfix, old=True)
+                    new_name = table.get_table_name(postfix=postfix, old=False)
+                    if self.operations.database_exists(old_name):
+                        self.operations.rename_database(old_name, new_name)
+                        if after_rename:
+                            after_rename(old_name, new_name)
 
     def delete_orphan_snapshots(self, after_delete=None):
         stellar_databases = set()

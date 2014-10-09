@@ -10,6 +10,16 @@ class NotSupportedDatabase(Exception):
     pass
 
 
+def get_engine_url(raw_conn, database):
+    url = str(raw_conn.engine.url)
+    if url.count('/') == 3 and url.endswith('/'):
+        return '%s%s' % (url, database)
+    else:
+        if not url.endswith('/'):
+            url += '/'
+        return '%s/%s' % ('/'.join(url.split('/')[0:-2]), database)
+
+
 def terminate_database_connections(raw_conn, database):
     if raw_conn.engine.dialect.name == 'postgresql':
         version = map(int, raw_conn.execute('SHOW server_version;').first()[0].split('.'))
@@ -31,7 +41,7 @@ def terminate_database_connections(raw_conn, database):
 
 def create_database(raw_conn, database):
     return sqlalchemy_utils.functions.create_database(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
@@ -78,18 +88,19 @@ def copy_database(raw_conn, from_database, to_database):
 
 def database_exists(raw_conn, database):
     return sqlalchemy_utils.functions.database_exists(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
 def remove_database(raw_conn, database):
     terminate_database_connections(raw_conn, database)
     return sqlalchemy_utils.functions.drop_database(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
 def rename_database(raw_conn, from_database, to_database):
+    terminate_database_connections(raw_conn, from_database)
     if raw_conn.engine.dialect.name == 'postgresql':
         raw_conn.execute(
             '''

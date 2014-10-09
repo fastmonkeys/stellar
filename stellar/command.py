@@ -8,9 +8,9 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from app import Stellar, __version__
-from config import InvalidConfig, MissingConfig, load_config, save_config
-from operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
+from .app import Stellar, __version__
+from .config import InvalidConfig, MissingConfig, load_config, save_config
+from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
 def upgrade_from_old_version(app):

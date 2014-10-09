@@ -47,3 +47,12 @@ How to restore from a snapshot
 -------
 
 ```$ stellar restore SNAPSHOT_NAME```
+
+Common issues
+-------
+
+````
+sqlalchemy.exc.OperationalError: (OperationalError) (1044, u"Access denied for user 'my_db_username'@'localhost' to database 'stellar_data'") "CREATE DATABASE stellar_data CHARACTER SET = 'utf8'" ()
+`````
+
+Make sure you have the rights to create new databases. See [Issue 10](https://github.com/fastmonkeys/stellar/issues/10) for discussion

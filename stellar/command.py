@@ -277,8 +277,7 @@ def main():
         for library, name in libraries.items():
             if str(e) == 'No module named %s' % library:
                 click.echo("Python library %s is required for %s support." %
-                    library,
-                    name
+                           (library, name)
                 )
                 click.echo("You can install it with pip:")
                 click.echo("pip install %s" % library)

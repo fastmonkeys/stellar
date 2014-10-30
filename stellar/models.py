@@ -9,7 +9,7 @@ Base = declarative_base()
 
 
 def get_unique_hash():
-    return hashlib.md5(str(uuid.uuid4())).hexdigest()
+    return hashlib.md5(str(uuid.uuid4()).encode('utf-8')).hexdigest()
 
 
 class Snapshot(Base):

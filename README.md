@@ -61,3 +61,5 @@ sqlalchemy.exc.OperationalError: (OperationalError) (1044, u"Access denied for u
 `````
 
 Make sure you have the rights to create new databases. See [Issue 10](https://github.com/fastmonkeys/stellar/issues/10) for discussion
+
+If you are using PostreSQL, make sure you have a database that is named the same as the unix username. You can test this by running just `psql`. (See [issue #44](https://github.com/fastmonkeys/stellar/issues/44) for details)

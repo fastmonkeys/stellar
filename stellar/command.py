@@ -195,7 +195,16 @@ def init():
         if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
-        engine = create_engine(url, echo=False)
+        if (
+            url.count('/') == 3 and
+            url.endswith('/') and
+            url.startswith('postgresql://')
+        ):
+            connection_url = url + 'template1'
+        else:
+            connection_url = url
+
+        engine = create_engine(connection_url, echo=False)
         try:
             conn = engine.connect()
         except OperationalError as err:

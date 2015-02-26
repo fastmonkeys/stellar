@@ -58,11 +58,11 @@ class Table(Base):
             )
         else:
             return 'stellar_%s' % hashlib.md5(
-                '%s|%s|%s' % (
+                ('%s|%s|%s' % (
                     self.table_name,
                     self.snapshot.hash,
                     postfix
-                )
+                )).encode('utf-8')
             ).hexdigest()[0:16]
 
     def __repr__(self):

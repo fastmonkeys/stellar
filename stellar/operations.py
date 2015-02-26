@@ -27,7 +27,7 @@ def get_engine_url(raw_conn, database):
 def terminate_database_connections(raw_conn, database):
     logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
-        version = map(int, raw_conn.execute('SHOW server_version;').first()[0].split('.'))
+        version = [int(x) for x in raw_conn.execute('SHOW server_version;').first()[0].split('.')]
         pid_column = 'pid' if (version[0] >= 9 and version[1] >= 2) else 'procpid'
 
         raw_conn.execute(

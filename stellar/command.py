@@ -237,16 +237,22 @@ def init():
         default=db_name
     )
 
+    raw_url = url
+
+    if engine.dialect.name == 'postgresql':
+        raw_url = raw_url + 'template1'
+
     with open('stellar.yaml', 'w') as project_file:
         project_file.write(
             """
 project_name: '%(name)s'
 tracked_databases: ['%(db_name)s']
-url: '%(url)s'
+url: '%(raw_url)s'
 stellar_url: '%(url)sstellar_data'
             """.strip() %
             {
                 'name': name,
+                'raw_url': raw_url,
                 'url': url,
                 'db_name': db_name
             }

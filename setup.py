@@ -48,13 +48,13 @@ setup(
         'Topic :: Software Development :: Version Control',
     ],
     install_requires = [
-        'PyYAML==3.11',
-        'SQLAlchemy==0.9.6',
-        'humanize==0.5.1',
-        'pytest==2.5.2',
-        'schema==0.3.1',
-        'click==3.1',
-        'SQLAlchemy-Utils==0.26.11',
-        'psutil==2.1.1',
+        'PyYAML>=3.11',
+        'SQLAlchemy>=0.9.6',
+        'humanize>=0.5.1',
+        'pytest>=2.5.2',
+        'schema>=0.3.1',
+        'click>=3.1',
+        'SQLAlchemy-Utils>=0.26.11',
+        'psutil>=2.1.1',
     ]
 )

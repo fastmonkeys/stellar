@@ -40,7 +40,7 @@ def test_snapshotting_and_restoring(pg_database, stellar):
 
 
     cwd = tempfile.mkdtemp()
-    with open(os.path.join(cwd, 'stellar.yaml'), 'wb') as fp:
+    with open(os.path.join(cwd, 'stellar.yaml'), 'w') as fp:
         fp.write("""
 project_name: sample
 stellar_url: postgresql://localhost:5432/stellar_data

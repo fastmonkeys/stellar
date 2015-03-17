@@ -14,7 +14,10 @@ def cleanup_database(conn):
 
 @pytest.yield_fixture
 def pg_database():
-    if not os.environ.get('RUN_INTEGRATION_TESTS', ''):
+    if not (
+        os.environ.get('RUN_INTEGRATION_TESTS') or
+        os.environ.get('TRAVIS')
+    ):
         pytest.skip("Enviroment variable RUN_INTEGRATION_TESTS is false")
         return
 

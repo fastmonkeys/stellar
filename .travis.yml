@@ -5,6 +5,7 @@ python:
   - 3.4
   - pypy
 install:
+  - pip install psycopg2
   - pip install -q -e . --use-mirrors
 script:
   - py.test

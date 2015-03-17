@@ -290,14 +290,15 @@ def main():
             'pymysql': 'MySQL',
         }
         for library, name in libraries.items():
-            if library in str(e):
-                click.echo("Python library %s is required for %s support." %
-                           (library, name)
+            if 'No module named' in str(e) and library in str(e):
+                click.echo(
+                    "Python library %s is required for %s support." %
+                    (library, name)
                 )
                 click.echo("You can install it with pip:")
                 click.echo("pip install %s" % library)
                 sys.exit(1)
-            elif 'MySQLdb' in str(e):
+            elif 'No module named' in str(e) and 'MySQLdb' in str(e):
                 click.echo(
                     "MySQLdb binary drivers are required for MySQL support. "
                     "You can try installing it with these instructions: "

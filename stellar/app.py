@@ -18,6 +18,7 @@ from .operations import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.sql import text
 from psutil import pid_exists
 
 
@@ -96,6 +97,13 @@ class Stellar(object):
             Snapshot.project_name == self.config['project_name']
         ).order_by(Snapshot.created_at.desc()).first()
 
+    def get_table_owner(self, table_name):
+        return self.db.session.query("owner").from_statement(
+            text("SELECT u.usename as owner "
+                 "FROM pg_database d "
+                 "JOIN pg_user u ON (d.datdba = u.usesysid) "
+                 "WHERE d.datname = :name")).params(name=table_name).first().owner
+
     def create_snapshot(self, snapshot_name, before_copy=None):
         snapshot = Snapshot(
             snapshot_name=snapshot_name,
@@ -109,7 +117,8 @@ class Stellar(object):
                 before_copy(table_name)
             table = Table(
                 table_name=table_name,
-                snapshot=snapshot
+                snapshot=snapshot,
+                owner=self.get_table_owner(table_name)
             )
             logger.debug('Copying %s to %s' % (
                 table_name,
@@ -146,6 +155,17 @@ class Stellar(object):
         snapshot.snapshot_name = new_name
         self.db.session.commit()
 
+    def restore_ownership(self, table_name, owner):
+        print "Restoring ownership of %s to %s." % (table_name, owner)
+        db_engine = create_engine(self.config['url'] + table_name, echo=False)
+        print self.config['url'] + table_name
+        db_conn = db_engine.connect()
+        db_conn.execute('''
+                    ALTER DATABASE "%s" OWNER TO "%s";
+                    REASSIGN OWNED BY postgres TO "%s";
+                ''' % (table_name, owner, owner))
+        db_conn.close()
+
     def restore(self, snapshot):
         for table in snapshot.tables:
             click.echo("Restoring database %s" % table.table_name)
@@ -164,6 +184,10 @@ class Stellar(object):
             self.operations.rename_database(
                 table.get_table_name('slave'),
                 table.table_name
+            )
+            self.restore_ownership(
+                table.table_name,
+                table.owner
             )
         snapshot.worker_pid = 1
         self.db.session.commit()

@@ -42,6 +42,7 @@ class Table(Base):
     snapshot_id = sa.Column(
         sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False
     )
+    owner = sa.Column(sa.String(255), nullable=False)
     snapshot = sa.orm.relationship(Snapshot, backref='tables')
 
     def get_table_name(self, postfix, old=False):

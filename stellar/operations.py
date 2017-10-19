@@ -24,11 +24,15 @@ def get_engine_url(raw_conn, database):
         return '%s/%s' % ('/'.join(url.split('/')[0:-2]), database)
 
 
+def _get_pid_column(raw_conn):
+    version = [int(x) for x in raw_conn.execute('SHOW server_version;').first()[0].split('.')]
+    return 'pid' if version >= [9, 2] else 'procpid'
+
+
 def terminate_database_connections(raw_conn, database):
     logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
-        version = [int(x) for x in raw_conn.execute('SHOW server_version;').first()[0].split('.')]
-        pid_column = 'pid' if (version[0] >= 9 and version[1] >= 2) else 'procpid'
+        pid_column = _get_pid_column(raw_conn)
 
         raw_conn.execute(
             '''

@@ -5,6 +5,6 @@ python:
   - 3.4
   - pypy
 install:
-  - pip install -q -e . --use-mirrors
+  - pip install -q -e .
 script:
   - py.test

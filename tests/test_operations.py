@@ -20,10 +20,10 @@ class TestGetPidColumn(object):
         raw_conn = ConnectionMock(version=version)
         assert _get_pid_column(raw_conn) == 'procpid'
 
-    @pytest.mark.parametrize(
-        'version',
-        ['9.2', '9.3', '10.0', '9.2.1', '10.1.1']
-    )
+    @pytest.mark.parametrize('version', [
+        '9.2', '9.3', '10.0', '9.2.1', '10.1.1',
+        '10.3 (Ubuntu 10.3-1.pgdg16.04+1)'
+    ])
     def test_returns_pid_for_version_equal_or_newer_than_9_2(self, version):
         raw_conn = ConnectionMock(version=version)
         assert _get_pid_column(raw_conn) == 'pid'

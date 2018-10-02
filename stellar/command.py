@@ -4,7 +4,6 @@ from time import sleep
 
 import humanize
 import click
-import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
@@ -23,6 +22,7 @@ def upgrade_from_old_version(app):
 
         app.config['migrate_from_0_3_2'] = False
         save_config(app.config)
+
 
 def get_app():
     app = Stellar()
@@ -55,19 +55,23 @@ def gc():
 
 @stellar.command()
 @click.argument('name', required=False)
-def snapshot(name):
+@click.option('--force', is_flag=True, help="Force creation of snapshot.")
+def snapshot(name, force):
     """Takes a snapshot of the database"""
     app = get_app()
     upgrade_from_old_version(app)
     name = name or app.default_snapshot_name
+    snapshot = app.get_snapshot(name)
 
-    if app.get_snapshot(name):
-        click.echo("Snapshot with name %s already exists" % name)
-        sys.exit(1)
-    else:
+    if not snapshot:
         def before_copy(table_name):
             click.echo("Snapshotting database %s" % table_name)
         app.create_snapshot(name, before_copy=before_copy)
+    elif force:
+        app.override_snapshot(snapshot)
+    else:
+        click.echo("Snapshot with name %s already exists" % name)
+        sys.exit(1)
 
 
 @stellar.command()

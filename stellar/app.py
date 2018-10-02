@@ -21,7 +21,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.4.5'
+__version__ = '0.5.0'
 logger = logging.getLogger(__name__)
 
 
@@ -145,6 +145,12 @@ class Stellar(object):
     def rename_snapshot(self, snapshot, new_name):
         snapshot.snapshot_name = new_name
         self.db.session.commit()
+
+    def override_snapshot(self, snapshot):
+        snapshot_name = snapshot.snapshot_name
+        click.echo("Overriding snapshot %s" % snapshot_name)
+        self.remove_snapshot(snapshot)
+        self.create_snapshot(snapshot_name)
 
     def restore(self, snapshot):
         for table in snapshot.tables:

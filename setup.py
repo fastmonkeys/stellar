@@ -53,7 +53,7 @@ setup(
         'humanize>=0.5.1',
         'schema>=0.3.1',
         'click>=3.1',
-        'SQLAlchemy-Utils>=0.26.11',
+        'SQLAlchemy-Utils==0.36.6',
         'psutil>=2.1.1',
     ]
 )

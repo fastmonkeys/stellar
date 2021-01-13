@@ -13,20 +13,8 @@ from .config import InvalidConfig, MissingConfig, load_config, save_config
 from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
-def upgrade_from_old_version(app):
-    if app.config['migrate_from_0_3_2']:
-        if app.is_old_database():
-            click.echo('Upgrading from old Stellar version...')
-            def after_rename(old_name, new_name):
-                click.echo('* Renamed %s to %s' % (old_name, new_name))
-            app.update_database_names_to_new_version(after_rename=after_rename)
-
-        app.config['migrate_from_0_3_2'] = False
-        save_config(app.config)
-
 def get_app():
     app = Stellar()
-    upgrade_from_old_version(app)
     return app
 
 
@@ -49,7 +37,6 @@ def gc():
         click.echo("Deleted table %s" % database)
 
     app = get_app()
-    upgrade_from_old_version(app)
     app.delete_orphan_snapshots(after_delete)
 
 
@@ -58,7 +45,6 @@ def gc():
 def snapshot(name):
     """Takes a snapshot of the database"""
     app = get_app()
-    upgrade_from_old_version(app)
     name = name or app.default_snapshot_name
 
     if app.get_snapshot(name):
@@ -195,14 +181,15 @@ def init():
         if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
-        if (
-            url.count('/') == 3 and
-            url.endswith('/') and
-            url.startswith('postgresql://')
-        ):
-            connection_url = url + 'template1'
-        else:
-            connection_url = url
+        # if (
+        #     url.count('/') == 3 and
+        #     url.endswith('/') and
+        #     url.startswith('postgresql://')
+        # ):
+        #     connection_url = url + 'template1'
+        # else:
+        #     connection_url = url
+        connection_url = url
 
         engine = create_engine(connection_url, echo=False)
         try:
@@ -249,22 +236,16 @@ def init():
     raw_url = url
 
     if engine.dialect.name == 'postgresql':
-        raw_url = raw_url + 'template1'
+        raw_url = raw_url + db_name
 
     with open('stellar.yaml', 'w') as project_file:
         project_file.write(
+            f"""
+project_name: {name}
+tracked_databases: ['{db_name}']
+url: '{raw_url}'
+stellar_url: '{url}stellar_data'
             """
-project_name: '%(name)s'
-tracked_databases: ['%(db_name)s']
-url: '%(raw_url)s'
-stellar_url: '%(url)sstellar_data'
-            """.strip() %
-            {
-                'name': name,
-                'raw_url': raw_url,
-                'url': url,
-                'db_name': db_name
-            }
         )
 
     click.echo("Wrote stellar.yaml")
@@ -286,7 +267,7 @@ def main():
         sys.exit(1)
     except ImportError as e:
         libraries = {
-            'psycopg2': 'PostreSQL',
+            'psycopg2': 'PostgreSQL',
             'pymysql': 'MySQL',
         }
         for library, name in libraries.items():

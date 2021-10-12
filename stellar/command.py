@@ -171,7 +171,8 @@ def replace(name):
 
 @stellar.command()
 @click.argument('url', required=False)
-def init(url):
+@click.argument('project', required=False)
+def init(url, project):
     """Initializes Stellar configuration."""
 
     def prompt_url():
@@ -246,10 +247,11 @@ def init(url):
         db_name = url.rsplit('/', 1)[-1]
         url = url.rsplit('/', 1)[0] + '/'
 
-    name = click.prompt(
-        'Please enter your project name (used internally, eg. %s)' % db_name,
-        default=db_name
-    )
+    if project is None:
+        project = click.prompt(
+            'Please enter project name (used internally, eg. %s)' % db_name,
+            default=db_name
+        )
 
     raw_url = url
 
@@ -264,7 +266,7 @@ def init(url):
                 url: '{raw_url}'
                 stellar_url: '{url}stellar_data'
                 """)
-            .format(name=name, db_name=db_name, raw_url=raw_url, url=url))
+            .format(name=project, db_name=db_name, raw_url=raw_url, url=url))
 
     click.echo("Wrote stellar.yaml")
     click.echo('')

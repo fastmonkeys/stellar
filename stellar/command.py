@@ -1,3 +1,4 @@
+import textwrap
 import sys
 from datetime import datetime
 from time import sleep
@@ -6,7 +7,7 @@ import humanize
 import click
 import logging
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import ArgumentError, OperationalError
 
 from .app import Stellar, __version__
 from .config import InvalidConfig, MissingConfig, load_config, save_config
@@ -169,15 +170,24 @@ def replace(name):
 
 
 @stellar.command()
-def init():
+@click.argument('url', required=False)
+def init(url):
     """Initializes Stellar configuration."""
+
+    def prompt_url():
+        msg = textwrap.dedent("""\
+            Please enter the url for your database.
+
+            For example:
+            PostgreSQL: postgresql://localhost:5432/
+            MySQL: mysql+pymysql://root@localhost/
+            """)
+        return click.prompt(msg)
+
     while True:
-        url = click.prompt(
-            "Please enter the url for your database.\n\n"
-            "For example:\n"
-            "PostgreSQL: postgresql://localhost:5432/\n"
-            "MySQL: mysql+pymysql://root@localhost/"
-        )
+        if not url:
+            url = prompt_url()
+
         if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
@@ -191,15 +201,23 @@ def init():
         #     connection_url = url
         connection_url = url
 
-        engine = create_engine(connection_url, echo=False)
+        try:
+            engine = create_engine(connection_url, echo=False)
+        except ArgumentError as err:
+            click.echo("Error: %s" % err)
+            url = None
+            continue
+
         try:
             conn = engine.connect()
         except OperationalError as err:
             click.echo("Could not connect to database: %s" % url)
-            click.echo("Error message: %s" % err.message)
+            click.echo("Error message: %s" % err)
             click.echo('')
         else:
             break
+
+        url = None
 
     if engine.dialect.name not in SUPPORTED_DIALECTS:
         click.echo("Your engine dialect %s is not supported." % (

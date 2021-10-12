@@ -258,12 +258,13 @@ def init(url):
 
     with open('stellar.yaml', 'w') as project_file:
         project_file.write(
-            """
-project_name: {name}
-tracked_databases: ['{db_name}']
-url: '{raw_url}'
-stellar_url: '{url}stellar_data'
-            """.format(name=name, db_name=db_name, raw_url=raw_url, url=url))
+            textwrap.dedent("""\
+                project_name: {name}
+                tracked_databases: ['{db_name}']
+                url: '{raw_url}'
+                stellar_url: '{url}stellar_data'
+                """)
+            .format(name=name, db_name=db_name, raw_url=raw_url, url=url))
 
     click.echo("Wrote stellar.yaml")
     click.echo('')

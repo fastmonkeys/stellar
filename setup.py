@@ -48,7 +48,7 @@ setup(
     install_requires = [
         'PyYAML>=5.3.1',
         'SQLAlchemy>=1.3.22',
-        'humanize>=3.2.0',
+        'humanize>=2.6.0',
         'schema>=0.7.2',
         'click>=7.1.2',
         'SQLAlchemy-Utils>=0.36.8',

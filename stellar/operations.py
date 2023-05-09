@@ -1,4 +1,5 @@
 import logging
+import re
 
 import sqlalchemy_utils
 
@@ -27,7 +28,7 @@ def get_engine_url(raw_conn, database):
 def _get_pid_column(raw_conn):
     # Some distros (e.g Debian) may inject their branding into server_version
     server_version = raw_conn.execute('SHOW server_version;').first()[0]
-    version_string, _, _ = server_version.partition(' ')
+    version_string = re.search('^(\d+\.\d+)', server_version).group(0)
     version = [int(x) for x in version_string.split('.')]
     return 'pid' if version >= [9, 2] else 'procpid'
 

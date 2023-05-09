@@ -21,7 +21,7 @@ class TestGetPidColumn(object):
         assert _get_pid_column(raw_conn) == 'procpid'
 
     @pytest.mark.parametrize('version', [
-        '9.2', '9.3', '10.0', '9.2.1', '10.1.1',
+        '9.2', '9.3', '10.0', '9.2.1', '9.6beta1', '10.1.1',
         '10.3 (Ubuntu 10.3-1.pgdg16.04+1)'
     ])
     def test_returns_pid_for_version_equal_or_newer_than_9_2(self, version):

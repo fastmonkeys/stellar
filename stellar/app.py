@@ -21,7 +21,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.4.5'
+__version__ = '0.5.0'
 logger = logging.getLogger(__name__)
 
 
@@ -49,7 +49,7 @@ class Stellar(object):
         logging.basicConfig(level=self.config['logging'])
 
     def init_database(self):
-        self.raw_db = create_engine(self.config['url'], echo=False)
+        self.raw_db = create_engine(self.config['url'])
         self.raw_conn = self.raw_db.connect()
         self.operations = Operations(self.raw_conn, self.config)
 
@@ -58,11 +58,11 @@ class Stellar(object):
         except AttributeError:
             logger.info('Could not set isolation level to 0')
 
-        self.db = create_engine(self.config['stellar_url'], echo=False)
+        self.db = create_engine(self.config['stellar_url'])
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
-        tables_missing = self.create_stellar_database()
-
+        
+        self.create_stellar_database()
         self.create_stellar_tables()
 
         # logger.getLogger('sqlalchemy.engine').setLevel(logger.WARN)

@@ -1,3 +1,4 @@
+import textwrap
 import sys
 from datetime import datetime
 from time import sleep
@@ -6,31 +7,19 @@ import humanize
 import click
 import logging
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import ArgumentError, OperationalError
 
 from .app import Stellar, __version__
 from .config import InvalidConfig, MissingConfig, load_config, save_config
 from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
-def upgrade_from_old_version(app):
-    if app.config['migrate_from_0_3_2']:
-        if app.is_old_database():
-            click.echo('Upgrading from old Stellar version...')
-            def after_rename(old_name, new_name):
-                click.echo('* Renamed %s to %s' % (old_name, new_name))
-            app.update_database_names_to_new_version(after_rename=after_rename)
-
-        app.config['migrate_from_0_3_2'] = False
-        save_config(app.config)
-
 def get_app():
     app = Stellar()
-    upgrade_from_old_version(app)
     return app
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 def stellar():
     """Fast database snapshots for development. It's like Git for databases."""
     pass
@@ -49,7 +38,6 @@ def gc():
         click.echo("Deleted table %s" % database)
 
     app = get_app()
-    upgrade_from_old_version(app)
     app.delete_orphan_snapshots(after_delete)
 
 
@@ -58,7 +46,6 @@ def gc():
 def snapshot(name):
     """Takes a snapshot of the database"""
     app = get_app()
-    upgrade_from_old_version(app)
     name = name or app.default_snapshot_name
 
     if app.get_snapshot(name):
@@ -183,36 +170,55 @@ def replace(name):
 
 
 @stellar.command()
-def init():
+@click.argument('url', required=False)
+@click.argument('project', required=False)
+def init(url, project):
     """Initializes Stellar configuration."""
+
+    def prompt_url():
+        msg = textwrap.dedent("""\
+            Please enter the url for your database.
+
+            For example:
+            PostgreSQL: postgresql://localhost:5432/
+            MySQL: mysql+pymysql://root@localhost/
+            """)
+        return click.prompt(msg)
+
     while True:
-        url = click.prompt(
-            "Please enter the url for your database.\n\n"
-            "For example:\n"
-            "PostgreSQL: postgresql://localhost:5432/\n"
-            "MySQL: mysql+pymysql://root@localhost/"
-        )
+        if not url:
+            url = prompt_url()
+
         if url.count('/') == 2 and not url.endswith('/'):
             url = url + '/'
 
-        if (
-            url.count('/') == 3 and
-            url.endswith('/') and
-            url.startswith('postgresql://')
-        ):
-            connection_url = url + 'template1'
-        else:
-            connection_url = url
+        # if (
+        #     url.count('/') == 3 and
+        #     url.endswith('/') and
+        #     url.startswith('postgresql://')
+        # ):
+        #     connection_url = url + 'template1'
+        # else:
+        #     connection_url = url
+        connection_url = url
 
-        engine = create_engine(connection_url, echo=False)
+        try:
+            engine = create_engine(connection_url, echo=False)
+        except ArgumentError as err:
+            click.echo("Error: %s" % err)
+            url = None
+            continue
+
         try:
             conn = engine.connect()
         except OperationalError as err:
             click.echo("Could not connect to database: %s" % url)
-            click.echo("Error message: %s" % err.message)
+            click.echo("Error message: %s" % err)
             click.echo('')
         else:
             break
+
+        url = None
 
     if engine.dialect.name not in SUPPORTED_DIALECTS:
         click.echo("Your engine dialect %s is not supported." % (
@@ -241,31 +247,26 @@ def init():
         db_name = url.rsplit('/', 1)[-1]
         url = url.rsplit('/', 1)[0] + '/'
 
-    name = click.prompt(
-        'Please enter your project name (used internally, eg. %s)' % db_name,
-        default=db_name
-    )
+    if project is None:
+        project = click.prompt(
+            'Please enter project name (used internally, eg. %s)' % db_name,
+            default=db_name
+        )
 
     raw_url = url
 
     if engine.dialect.name == 'postgresql':
-        raw_url = raw_url + 'template1'
+        raw_url = raw_url + db_name
 
     with open('stellar.yaml', 'w') as project_file:
         project_file.write(
-            """
-project_name: '%(name)s'
-tracked_databases: ['%(db_name)s']
-url: '%(raw_url)s'
-stellar_url: '%(url)sstellar_data'
-            """.strip() %
-            {
-                'name': name,
-                'raw_url': raw_url,
-                'url': url,
-                'db_name': db_name
-            }
-        )
+            textwrap.dedent("""\
+                project_name: {name}
+                tracked_databases: ['{db_name}']
+                url: '{raw_url}'
+                stellar_url: '{url}stellar_data'
+                """)
+            .format(name=project, db_name=db_name, raw_url=raw_url, url=url))
 
     click.echo("Wrote stellar.yaml")
     click.echo('')
@@ -286,7 +287,7 @@ def main():
         sys.exit(1)
     except ImportError as e:
         libraries = {
-            'psycopg2': 'PostreSQL',
+            'psycopg2': 'PostgreSQL',
             'pymysql': 'MySQL',
         }
         for library, name in libraries.items():

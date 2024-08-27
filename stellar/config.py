@@ -13,16 +13,14 @@ class MissingConfig(Exception):
 
 
 default_config = {
-    'logging': 30,
-    'migrate_from_0_3_2': True
+    'logging': 30
 }
 schema = Schema({
     'stellar_url': Use(str),
     'url': Use(str),
     'project_name': Use(str),
     'tracked_databases': [Use(str)],
-    Optional('logging'): int,
-    Optional('migrate_from_0_3_2'): bool
+    Optional('logging'): int
 })
 
 

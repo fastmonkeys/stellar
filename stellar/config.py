@@ -21,7 +21,7 @@ schema = Schema({
     'project_name': Use(str),
     'tracked_databases': [Use(str)],
     Optional('logging'): int,
-})
+}, ignore_extra_keys=True)
 
 
 def get_config_path():

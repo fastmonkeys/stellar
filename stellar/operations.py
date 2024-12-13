@@ -1,6 +1,7 @@
 import logging
 
 import sqlalchemy_utils
+import sqlalchemy as sa
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +29,16 @@ def terminate_database_connections(raw_conn, database):
     logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
         raw_conn.execute(
-            '''
-                SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
-                FROM pg_stat_activity
-                WHERE
-                    pg_stat_activity.datname = '%(database)s' AND
-                    %(pid_column)s <> pg_backend_pid();
-            ''' % {'pid_column': 'pid', 'database': database}
+            sa.text(
+                '''
+                    SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
+                    FROM pg_stat_activity
+                    WHERE
+                        pg_stat_activity.datname = :database AND
+                        pid <> pg_backend_pid();
+                '''
+            ),
+            database=database
         )
     else:
         # NotYetImplemented
@@ -60,31 +64,35 @@ def copy_database(raw_conn, from_database, to_database):
     elif raw_conn.engine.dialect.name == 'mysql':
         # Horribly slow implementation.
         create_database(raw_conn, to_database)
-        for row in raw_conn.execute('SHOW TABLES in %s;' % from_database):
-            raw_conn.execute('''
-                CREATE TABLE %s.%s LIKE %s.%s
-            ''' % (
+        for row in raw_conn.execute(sa.text('SHOW TABLES in %s;' % from_database)):
+            raw_conn.execute(
+                sa.text(
+                    '''
+                        CREATE TABLE %s.%s LIKE %s.%s
+                    ''' % (
+                        to_database,
+                        row[0],
+                        from_database,
+                        row[0]
+                    )
+                )
+            )
+            raw_conn.execute(sa.text('ALTER TABLE %s.%s DISABLE KEYS' % (
                 to_database,
-                row[0],
-                from_database,
                 row[0]
-            ))
-            raw_conn.execute('ALTER TABLE %s.%s DISABLE KEYS' % (
-                to_database,
-                row[0]
-            ))
-            raw_conn.execute('''
+            )))
+            raw_conn.execute(sa.text('''
                 INSERT INTO %s.%s SELECT * FROM %s.%s
             ''' % (
                 to_database,
                 row[0],
                 from_database,
                 row[0]
-            ))
-            raw_conn.execute('ALTER TABLE %s.%s ENABLE KEYS' % (
+            )))
+            raw_conn.execute(sa.text('ALTER TABLE %s.%s ENABLE KEYS' % (
                 to_database,
                 row[0]
-            ))
+            )))
     else:
         raise NotSupportedDatabase()
 
@@ -109,25 +117,31 @@ def rename_database(raw_conn, from_database, to_database):
     terminate_database_connections(raw_conn, from_database)
     if raw_conn.engine.dialect.name == 'postgresql':
         raw_conn.execute(
-            '''
-                ALTER DATABASE "%s" RENAME TO "%s"
-            ''' %
-            (
-                from_database,
-                to_database
+            sa.text(
+                '''
+                    ALTER DATABASE "%s" RENAME TO "%s"
+                ''' %
+                (
+                    from_database,
+                    to_database
+                )
             )
         )
     elif raw_conn.engine.dialect.name == 'mysql':
         create_database(raw_conn, to_database)
-        for row in raw_conn.execute('SHOW TABLES in %s;' % from_database):
-            raw_conn.execute('''
-                RENAME TABLE %s.%s TO %s.%s;
-            ''' % (
-                from_database,
-                row[0],
-                to_database,
-                row[0]
-            ))
+        for row in raw_conn.execute(sa.text('SHOW TABLES in %s;' % from_database)):
+            raw_conn.execute(
+                sa.text(
+                    ''''
+                        RENAME TABLE %s.%s TO %s.%s;
+                    ''' % (
+                        from_database,
+                        row[0],
+                        to_database,
+                        row[0]
+                    )
+                )
+            )
         remove_database(raw_conn, from_database)
     else:
         raise NotSupportedDatabase()
@@ -138,15 +152,17 @@ def list_of_databases(raw_conn):
     if raw_conn.engine.dialect.name == 'postgresql':
         return [
             row[0]
-            for row in raw_conn.execute('''
-                SELECT datname FROM pg_database
-                WHERE datistemplate = false
-            ''')
+            for row in raw_conn.execute(
+                sa.text('''
+                    SELECT datname FROM pg_database
+                    WHERE datistemplate = false
+                ''')
+            )
         ]
     elif raw_conn.engine.dialect.name == 'mysql':
         return [
             row[0]
-            for row in raw_conn.execute('''SHOW DATABASES''')
+            for row in raw_conn.execute(sa.text('''SHOW DATABASES'''))
         ]
     else:
         raise NotSupportedDatabase()

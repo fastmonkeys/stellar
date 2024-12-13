@@ -1,4 +1,9 @@
+import logging
+import re
+
 import sqlalchemy_utils
+
+logger = logging.getLogger(__name__)
 
 
 SUPPORTED_DIALECTS = (
@@ -10,16 +15,37 @@ class NotSupportedDatabase(Exception):
     pass
 
 
+def get_engine_url(raw_conn, database):
+    url = str(raw_conn.engine.url)
+    if url.count('/') == 3 and url.endswith('/'):
+        return '%s%s' % (url, database)
+    else:
+        if not url.endswith('/'):
+            url += '/'
+        return '%s/%s' % ('/'.join(url.split('/')[0:-2]), database)
+
+
+def _get_pid_column(raw_conn):
+    # Some distros (e.g Debian) may inject their branding into server_version
+    server_version = raw_conn.execute('SHOW server_version;').first()[0]
+    version_string = re.search('^(\d+\.\d+)', server_version).group(0)
+    version = [int(x) for x in version_string.split('.')]
+    return 'pid' if version >= [9, 2] else 'procpid'
+
+
 def terminate_database_connections(raw_conn, database):
+    logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
+        pid_column = _get_pid_column(raw_conn)
+
         raw_conn.execute(
             '''
-                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
                 FROM pg_stat_activity
                 WHERE
-                    pg_stat_activity.datname = '%s' AND
-                    pid <> pg_backend_pid();
-            ''' % database
+                    pg_stat_activity.datname = '%(database)s' AND
+                    %(pid_column)s <> pg_backend_pid();
+            ''' % {'pid_column': pid_column, 'database': database}
         )
     else:
         # NotYetImplemented
@@ -27,12 +53,14 @@ def terminate_database_connections(raw_conn, database):
 
 
 def create_database(raw_conn, database):
+    logger.debug('create_database(%r)', database)
     return sqlalchemy_utils.functions.create_database(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
 def copy_database(raw_conn, from_database, to_database):
+    logger.debug('copy_database(%r, %r)', from_database, to_database)
     terminate_database_connections(raw_conn, from_database)
 
     if raw_conn.engine.dialect.name == 'postgresql':
@@ -64,24 +92,32 @@ def copy_database(raw_conn, from_database, to_database):
                 from_database,
                 row[0]
             ))
+            raw_conn.execute('ALTER TABLE %s.%s ENABLE KEYS' % (
+                to_database,
+                row[0]
+            ))
     else:
         raise NotSupportedDatabase()
 
 
 def database_exists(raw_conn, database):
+    logger.debug('database_exists(%r)', database)
     return sqlalchemy_utils.functions.database_exists(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
 def remove_database(raw_conn, database):
+    logger.debug('remove_database(%r)', database)
     terminate_database_connections(raw_conn, database)
     return sqlalchemy_utils.functions.drop_database(
-        '%s%s' % (raw_conn.engine.url, database)
+        get_engine_url(raw_conn, database)
     )
 
 
 def rename_database(raw_conn, from_database, to_database):
+    logger.debug('rename_database(%r, %r)', from_database, to_database)
+    terminate_database_connections(raw_conn, from_database)
     if raw_conn.engine.dialect.name == 'postgresql':
         raw_conn.execute(
             '''
@@ -109,6 +145,7 @@ def rename_database(raw_conn, from_database, to_database):
 
 
 def list_of_databases(raw_conn):
+    logger.debug('list_of_databases()')
     if raw_conn.engine.dialect.name == 'postgresql':
         return [
             row[0]

@@ -7,9 +7,12 @@ from setuptools import setup, find_packages
 
 # https://bitbucket.org/zzzeek/alembic/raw/f38eaad4a80d7e3d893c3044162971971ae0
 # 09bf/setup.py
-v = open(os.path.join(os.path.dirname(__file__), 'stellar', 'app.py'))
-VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
-v.close()
+with open(
+    os.path.join(os.path.dirname(__file__), 'stellar', 'app.py')
+) as app_file:
+    VERSION = re.compile(
+        r".*__version__ = '(.*?)'", re.S
+    ).match(app_file.read()).group(1)
 
 with open("README.md") as readme:
     long_description = readme.read()
@@ -45,13 +48,12 @@ setup(
         'Topic :: Software Development :: Version Control',
     ],
     install_requires = [
-        'PyYAML',
-        'SQLAlchemy',
-        'humanize',
-        'pytest',
-        'schema',
-        'click',
-        'SQLAlchemy-Utils',
-        'psutil',
+        'PyYAML>=3.11',
+        'SQLAlchemy>=0.9.6',
+        'humanize>=0.5.1',
+        'schema>=0.3.1',
+        'click>=3.1',
+        'SQLAlchemy-Utils>=0.26.11',
+        'psutil>=2.1.1',
     ]
 )

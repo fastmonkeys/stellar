@@ -1,11 +1,12 @@
 import logging
 import os
 import sys
+import click
 from functools import partial
 
-from config import load_config
-from models import Snapshot, Table, Base
-from operations import (
+from .config import load_config
+from .models import Snapshot, Table, Base
+from .operations import (
     copy_database,
     create_database,
     database_exists,
@@ -20,8 +21,8 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.3.2'
-logging.basicConfig()
+__version__ = '0.4.5'
+logger = logging.getLogger(__name__)
 
 
 class Operations(object):
@@ -39,11 +40,13 @@ class Operations(object):
 
 class Stellar(object):
     def __init__(self):
+        logger.debug('Initialized Stellar()')
         self.load_config()
         self.init_database()
 
     def load_config(self):
         self.config = load_config()
+        logging.basicConfig(level=self.config['logging'])
 
     def init_database(self):
         self.raw_db = create_engine(self.config['url'], echo=False)
@@ -53,17 +56,16 @@ class Stellar(object):
         try:
             self.raw_conn.connection.set_isolation_level(0)
         except AttributeError:
-            logging.info('Could not set isolation level to 0')
+            logger.info('Could not set isolation level to 0')
 
         self.db = create_engine(self.config['stellar_url'], echo=False)
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
         tables_missing = self.create_stellar_database()
 
-        if tables_missing:
-            self.create_stellar_tables()
+        self.create_stellar_tables()
 
-        # logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+        # logger.getLogger('sqlalchemy.engine').setLevel(logger.WARN)
 
     def create_stellar_database(self):
         if not self.operations.database_exists('stellar_data'):
@@ -109,6 +111,10 @@ class Stellar(object):
                 table_name=table_name,
                 snapshot=snapshot
             )
+            logger.debug('Copying %s to %s' % (
+                table_name,
+                table.get_table_name('master')
+            ))
             self.operations.copy_database(
                 table_name,
                 table.get_table_name('master')
@@ -142,11 +148,11 @@ class Stellar(object):
 
     def restore(self, snapshot):
         for table in snapshot.tables:
-            print "Restoring database %s" % table.table_name
+            click.echo("Restoring database %s" % table.table_name)
             if not self.operations.database_exists(
                 table.get_table_name('slave')
             ):
-                print (
+                click.echo(
                     "Database %s does not exist."
                     % table.get_table_name('slave')
                 )
@@ -154,7 +160,7 @@ class Stellar(object):
             try:
                 self.operations.remove_database(table.table_name)
             except ProgrammingError:
-                logging.warn('Database %s does not exist.' % table.table_name)
+                logger.warn('Database %s does not exist.' % table.table_name)
             self.operations.rename_database(
                 table.get_table_name('slave'),
                 table.table_name
@@ -165,13 +171,14 @@ class Stellar(object):
         self.start_background_slave_copy(snapshot)
 
     def start_background_slave_copy(self, snapshot):
+        logger.debug('Starting background slave copy')
         snapshot_id = snapshot.id
 
         self.raw_conn.close()
         self.raw_db.session.close()
         self.db.session.close()
 
-        pid = os.fork()
+        pid = os.fork() if hasattr(os, 'fork') else None
         if pid:
             return
 
@@ -195,6 +202,26 @@ class Stellar(object):
 
     def is_copy_process_running(self, snapshot):
         return pid_exists(snapshot.worker_pid)
+
+    def is_old_database(self):
+        for snapshot in self.db.session.query(Snapshot):
+            for table in snapshot.tables:
+                for postfix in ('master', 'slave'):
+                    old_name = table.get_table_name(postfix=postfix, old=True)
+                    if self.operations.database_exists(old_name):
+                        return True
+        return False
+
+    def update_database_names_to_new_version(self, after_rename=None):
+        for snapshot in self.db.session.query(Snapshot):
+            for table in snapshot.tables:
+                for postfix in ('master', 'slave'):
+                    old_name = table.get_table_name(postfix=postfix, old=True)
+                    new_name = table.get_table_name(postfix=postfix, old=False)
+                    if self.operations.database_exists(old_name):
+                        self.operations.rename_database(old_name, new_name)
+                        if after_rename:
+                            after_rename(old_name, new_name)
 
     def delete_orphan_snapshots(self, after_delete=None):
         stellar_databases = set()

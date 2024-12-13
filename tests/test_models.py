@@ -9,11 +9,11 @@ def test_get_unique_hash():
 
 def test_table():
     table = Table(
-        table_name='hapsu',
+        table_name="hapsu",
         snapshot=Snapshot(
-            snapshot_name='snapshot',
-            project_name='myproject',
-            hash='3330484d0a70eecab84554b5576b4553'
-        )
+            snapshot_name="snapshot",
+            project_name="myproject",
+            hash="3330484d0a70eecab84554b5576b4553",
+        ),
     )
-    assert len(table.get_table_name('master')) == 24
+    assert len(table.get_table_name("master")) == 24

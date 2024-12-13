@@ -13,33 +13,31 @@ class MissingConfig(Exception):
 
 
 default_config = {
-    'logging': 30,
+    "logging": 30,
 }
-schema = Schema({
-    'stellar_url': Use(str),
-    'url': Use(str),
-    'project_name': Use(str),
-    'tracked_databases': [Use(str)],
-    Optional('logging'): int,
-}, ignore_extra_keys=True)
+schema = Schema(
+    {
+        "stellar_url": Use(str),
+        "url": Use(str),
+        "project_name": Use(str),
+        "tracked_databases": [Use(str)],
+        Optional("logging"): int,
+    },
+    ignore_extra_keys=True,
+)
 
 
 def get_config_path():
     current_directory = os.getcwd()
     while True:
         try:
-            with open(
-                os.path.join(current_directory, 'stellar.yaml'),
-                'rb'
-            ) as fp:
-                return os.path.join(current_directory, 'stellar.yaml')
+            with open(os.path.join(current_directory, "stellar.yaml"), "rb") as fp:
+                return os.path.join(current_directory, "stellar.yaml")
         except IOError:
             pass
 
-        current_directory = os.path.abspath(
-            os.path.join(current_directory, '..')
-        )
-        if current_directory == '/':
+        current_directory = os.path.abspath(os.path.join(current_directory, ".."))
+        if current_directory == "/":
             return None
 
 
@@ -48,19 +46,14 @@ def load_config():
     current_directory = os.getcwd()
     while True:
         try:
-            with open(
-                os.path.join(current_directory, 'stellar.yaml'),
-                'rb'
-            ) as fp:
+            with open(os.path.join(current_directory, "stellar.yaml"), "rb") as fp:
                 config = yaml.safe_load(fp)
                 break
         except IOError:
             pass
-        current_directory = os.path.abspath(
-            os.path.join(current_directory, '..')
-        )
+        current_directory = os.path.abspath(os.path.join(current_directory, ".."))
 
-        if current_directory == '/':
+        if current_directory == "/":
             break
 
     if not config:
@@ -77,6 +70,6 @@ def load_config():
 
 
 def save_config(config):
-    logging.getLogger(__name__).debug('save_config()')
+    logging.getLogger(__name__).debug("save_config()")
     with open(get_config_path(), "w") as fp:
         yaml.dump(config, fp)

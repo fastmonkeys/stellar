@@ -21,7 +21,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.5.0'
+__version__ = "0.5.0"
 logger = logging.getLogger(__name__)
 
 
@@ -40,33 +40,33 @@ class Operations(object):
 
 class Stellar(object):
     def __init__(self):
-        logger.debug('Initialized Stellar()')
+        logger.debug("Initialized Stellar()")
         self.load_config()
         self.init_database()
 
     def load_config(self):
         self.config = load_config()
-        logging.basicConfig(level=self.config['logging'])
+        logging.basicConfig(level=self.config["logging"])
 
     def init_database(self):
-        self.raw_db = create_engine(self.config['url'], echo=False)
+        self.raw_db = create_engine(self.config["url"], echo=False)
         self.raw_conn = self.raw_db.connect()
         self.operations = Operations(self.raw_conn, self.config)
 
         try:
             self.raw_conn.connection.set_isolation_level(0)
         except AttributeError:
-            logger.info('Could not set isolation level to 0')
+            logger.info("Could not set isolation level to 0")
 
-        self.db = create_engine(self.config['stellar_url'], echo=False)
+        self.db = create_engine(self.config["stellar_url"], echo=False)
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
         self.create_stellar_database()
         self.create_stellar_tables()
 
     def create_stellar_database(self):
-        if not self.operations.database_exists('stellar_data'):
-            self.operations.create_database('stellar_data')
+        if not self.operations.database_exists("stellar_data"):
+            self.operations.create_database("stellar_data")
             return True
         else:
             return False
@@ -76,46 +76,46 @@ class Stellar(object):
         self.db.session.commit()
 
     def get_snapshot(self, snapshot_name):
-        return self.db.session.query(Snapshot).filter(
-            Snapshot.snapshot_name == snapshot_name,
-            Snapshot.project_name == self.config['project_name']
-        ).first()
+        return (
+            self.db.session.query(Snapshot)
+            .filter(
+                Snapshot.snapshot_name == snapshot_name,
+                Snapshot.project_name == self.config["project_name"],
+            )
+            .first()
+        )
 
     def get_snapshots(self):
-        return self.db.session.query(Snapshot).filter(
-            Snapshot.project_name == self.config['project_name']
-        ).order_by(
-            Snapshot.created_at.desc()
-        ).all()
+        return (
+            self.db.session.query(Snapshot)
+            .filter(Snapshot.project_name == self.config["project_name"])
+            .order_by(Snapshot.created_at.desc())
+            .all()
+        )
 
     def get_latest_snapshot(self):
-        return self.db.session.query(Snapshot).filter(
-            Snapshot.project_name == self.config['project_name']
-        ).order_by(Snapshot.created_at.desc()).first()
+        return (
+            self.db.session.query(Snapshot)
+            .filter(Snapshot.project_name == self.config["project_name"])
+            .order_by(Snapshot.created_at.desc())
+            .first()
+        )
 
     def create_snapshot(self, snapshot_name, before_copy=None):
         snapshot = Snapshot(
-            snapshot_name=snapshot_name,
-            project_name=self.config['project_name']
+            snapshot_name=snapshot_name, project_name=self.config["project_name"]
         )
         self.db.session.add(snapshot)
         self.db.session.flush()
 
-        for table_name in self.config['tracked_databases']:
+        for table_name in self.config["tracked_databases"]:
             if before_copy:
                 before_copy(table_name)
-            table = Table(
-                table_name=table_name,
-                snapshot=snapshot
+            table = Table(table_name=table_name, snapshot=snapshot)
+            logger.debug(
+                "Copying %s to %s" % (table_name, table.get_table_name("master"))
             )
-            logger.debug('Copying %s to %s' % (
-                table_name,
-                table.get_table_name('master')
-            ))
-            self.operations.copy_database(
-                table_name,
-                table.get_table_name('master')
-            )
+            self.operations.copy_database(table_name, table.get_table_name("master"))
             self.db.session.add(table)
         self.db.session.commit()
 
@@ -124,15 +124,11 @@ class Stellar(object):
     def remove_snapshot(self, snapshot):
         for table in snapshot.tables:
             try:
-                self.operations.remove_database(
-                    table.get_table_name('master')
-                )
+                self.operations.remove_database(table.get_table_name("master"))
             except ProgrammingError:
                 pass
             try:
-                self.operations.remove_database(
-                    table.get_table_name('slave')
-                )
+                self.operations.remove_database(table.get_table_name("slave"))
             except ProgrammingError:
                 pass
             self.db.session.delete(table)
@@ -146,21 +142,17 @@ class Stellar(object):
     def restore(self, snapshot):
         for table in snapshot.tables:
             click.echo("Restoring database %s" % table.table_name)
-            if not self.operations.database_exists(
-                table.get_table_name('slave')
-            ):
+            if not self.operations.database_exists(table.get_table_name("slave")):
                 click.echo(
-                    "Database %s does not exist."
-                    % table.get_table_name('slave')
+                    "Database %s does not exist." % table.get_table_name("slave")
                 )
                 sys.exit(1)
             try:
                 self.operations.remove_database(table.table_name)
             except ProgrammingError:
-                logger.warn('Database %s does not exist.' % table.table_name)
+                logger.warn("Database %s does not exist." % table.table_name)
             self.operations.rename_database(
-                table.get_table_name('slave'),
-                table.table_name
+                table.get_table_name("slave"), table.table_name
             )
         snapshot.worker_pid = 1
         self.db.session.commit()
@@ -168,14 +160,14 @@ class Stellar(object):
         self.start_background_slave_copy(snapshot)
 
     def start_background_slave_copy(self, snapshot):
-        logger.debug('Starting background slave copy')
+        logger.debug("Starting background slave copy")
         snapshot_id = snapshot.id
 
         self.raw_conn.close()
         self.raw_db.session.close()
         self.db.session.close()
 
-        pid = os.fork() if hasattr(os, 'fork') else None
+        pid = os.fork() if hasattr(os, "fork") else None
         if pid:
             return
 
@@ -191,8 +183,7 @@ class Stellar(object):
     def inline_slave_copy(self, snapshot):
         for table in snapshot.tables:
             self.operations.copy_database(
-                table.get_table_name('master'),
-                table.get_table_name('slave')
+                table.get_table_name("master"), table.get_table_name("slave")
             )
         snapshot.worker_pid = None
         self.db.session.commit()
@@ -204,17 +195,16 @@ class Stellar(object):
         stellar_databases = set()
         for snapshot in self.db.session.query(Snapshot):
             for table in snapshot.tables:
-                stellar_databases.add(table.get_table_name('master'))
-                stellar_databases.add(table.get_table_name('slave'))
+                stellar_databases.add(table.get_table_name("master"))
+                stellar_databases.add(table.get_table_name("slave"))
 
         databases = set(self.operations.list_of_databases())
 
         for database in filter(
             lambda database: (
-                database.startswith('stellar_') and
-                database != 'stellar_data'
+                database.startswith("stellar_") and database != "stellar_data"
             ),
-            (databases-stellar_databases)
+            (databases - stellar_databases),
         ):
             self.operations.remove_database(database)
             if after_delete:
@@ -223,9 +213,13 @@ class Stellar(object):
     @property
     def default_snapshot_name(self):
         n = 1
-        while self.db.session.query(Snapshot).filter(
-            Snapshot.snapshot_name == 'snap%d' % n,
-            Snapshot.project_name == self.config['project_name']
-        ).count():
+        while (
+            self.db.session.query(Snapshot)
+            .filter(
+                Snapshot.snapshot_name == "snap%d" % n,
+                Snapshot.project_name == self.config["project_name"],
+            )
+            .count()
+        ):
             n += 1
-        return 'snap%d' % n
+        return "snap%d" % n

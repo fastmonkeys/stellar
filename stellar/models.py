@@ -9,16 +9,12 @@ Base = declarative_base()
 
 
 def get_unique_hash():
-    return hashlib.md5(str(uuid.uuid4()).encode('utf-8')).hexdigest()
+    return hashlib.md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()
 
 
 class Snapshot(Base):
-    __tablename__ = 'snapshot'
-    id = sa.Column(
-        sa.Integer,
-        sa.Sequence('snapshot_id_seq'),
-        primary_key=True
-    )
+    __tablename__ = "snapshot"
+    id = sa.Column(sa.Integer, sa.Sequence("snapshot_id_seq"), primary_key=True)
     snapshot_name = sa.Column(sa.String(255), nullable=False)
     project_name = sa.Column(sa.String(255), nullable=False)
     hash = sa.Column(sa.String(32), nullable=False, default=get_unique_hash)
@@ -30,42 +26,33 @@ class Snapshot(Base):
         return self.worker_pid is None
 
     def __repr__(self):
-        return "<Snapshot(snapshot_name=%r)>" % (
-            self.snapshot_name
-        )
+        return "<Snapshot(snapshot_name=%r)>" % (self.snapshot_name)
 
 
 class Table(Base):
-    __tablename__ = 'table'
-    id = sa.Column(sa.Integer, sa.Sequence('table_id_seq'), primary_key=True)
+    __tablename__ = "table"
+    id = sa.Column(sa.Integer, sa.Sequence("table_id_seq"), primary_key=True)
     table_name = sa.Column(sa.String(255), nullable=False)
-    snapshot_id = sa.Column(
-        sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False
-    )
-    snapshot = sa.orm.relationship(Snapshot, backref='tables')
+    snapshot_id = sa.Column(sa.Integer, sa.ForeignKey(Snapshot.id), nullable=False)
+    snapshot = sa.orm.relationship(Snapshot, backref="tables")
 
     def get_table_name(self, postfix, old=False):
         if not self.snapshot:
-            raise Exception('Table name requires snapshot')
+            raise Exception("Table name requires snapshot")
         if not self.snapshot.hash:
-            raise Exception('Snapshot hash is empty.')
+            raise Exception("Snapshot hash is empty.")
 
         if old:
-            return 'stellar_%s_%s_%s' % (
-                self.table_name,
-                self.snapshot.hash,
-                postfix
-            )
+            return "stellar_%s_%s_%s" % (self.table_name, self.snapshot.hash, postfix)
         else:
-            return 'stellar_%s' % hashlib.md5(
-                ('%s|%s|%s' % (
-                    self.table_name,
-                    self.snapshot.hash,
-                    postfix
-                )).encode('utf-8')
-            ).hexdigest()[0:16]
+            return (
+                "stellar_%s"
+                % hashlib.md5(
+                    (
+                        "%s|%s|%s" % (self.table_name, self.snapshot.hash, postfix)
+                    ).encode("utf-8")
+                ).hexdigest()[0:16]
+            )
 
     def __repr__(self):
-        return "<Table(table_name=%r)>" % (
-            self.table_name,
-        )
+        return "<Table(table_name=%r)>" % (self.table_name,)

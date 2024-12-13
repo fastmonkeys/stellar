@@ -21,7 +21,7 @@ from sqlalchemy.exc import ProgrammingError
 from psutil import pid_exists
 
 
-__version__ = '0.4.5'
+__version__ = '0.5.0'
 logger = logging.getLogger(__name__)
 
 
@@ -61,11 +61,8 @@ class Stellar(object):
         self.db = create_engine(self.config['stellar_url'], echo=False)
         self.db.session = sessionmaker(bind=self.db)()
         self.raw_db.session = sessionmaker(bind=self.raw_db)()
-        tables_missing = self.create_stellar_database()
-
+        self.create_stellar_database()
         self.create_stellar_tables()
-
-        # logger.getLogger('sqlalchemy.engine').setLevel(logger.WARN)
 
     def create_stellar_database(self):
         if not self.operations.database_exists('stellar_data'):
@@ -202,26 +199,6 @@ class Stellar(object):
 
     def is_copy_process_running(self, snapshot):
         return pid_exists(snapshot.worker_pid)
-
-    def is_old_database(self):
-        for snapshot in self.db.session.query(Snapshot):
-            for table in snapshot.tables:
-                for postfix in ('master', 'slave'):
-                    old_name = table.get_table_name(postfix=postfix, old=True)
-                    if self.operations.database_exists(old_name):
-                        return True
-        return False
-
-    def update_database_names_to_new_version(self, after_rename=None):
-        for snapshot in self.db.session.query(Snapshot):
-            for table in snapshot.tables:
-                for postfix in ('master', 'slave'):
-                    old_name = table.get_table_name(postfix=postfix, old=True)
-                    new_name = table.get_table_name(postfix=postfix, old=False)
-                    if self.operations.database_exists(old_name):
-                        self.operations.rename_database(old_name, new_name)
-                        if after_rename:
-                            after_rename(old_name, new_name)
 
     def delete_orphan_snapshots(self, after_delete=None):
         stellar_databases = set()

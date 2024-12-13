@@ -1,5 +1,4 @@
 import logging
-import re
 
 import sqlalchemy_utils
 
@@ -25,19 +24,9 @@ def get_engine_url(raw_conn, database):
         return '%s/%s' % ('/'.join(url.split('/')[0:-2]), database)
 
 
-def _get_pid_column(raw_conn):
-    # Some distros (e.g Debian) may inject their branding into server_version
-    server_version = raw_conn.execute('SHOW server_version;').first()[0]
-    version_string = re.search('^(\d+\.\d+)', server_version).group(0)
-    version = [int(x) for x in version_string.split('.')]
-    return 'pid' if version >= [9, 2] else 'procpid'
-
-
 def terminate_database_connections(raw_conn, database):
     logger.debug('terminate_database_connections(%r)', database)
     if raw_conn.engine.dialect.name == 'postgresql':
-        pid_column = _get_pid_column(raw_conn)
-
         raw_conn.execute(
             '''
                 SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
@@ -45,7 +34,7 @@ def terminate_database_connections(raw_conn, database):
                 WHERE
                     pg_stat_activity.datname = '%(database)s' AND
                     %(pid_column)s <> pg_backend_pid();
-            ''' % {'pid_column': pid_column, 'database': database}
+            ''' % {'pid_column': 'pid', 'database': database}
         )
     else:
         # NotYetImplemented

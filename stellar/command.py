@@ -4,30 +4,16 @@ from time import sleep
 
 import humanize
 import click
-import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from .app import Stellar, __version__
-from .config import InvalidConfig, MissingConfig, load_config, save_config
+from .config import InvalidConfig, MissingConfig, load_config
 from .operations import database_exists, list_of_databases, SUPPORTED_DIALECTS
 
 
-def upgrade_from_old_version(app):
-    if app.config['migrate_from_0_3_2']:
-        if app.is_old_database():
-            click.echo('Upgrading from old Stellar version...')
-            def after_rename(old_name, new_name):
-                click.echo('* Renamed %s to %s' % (old_name, new_name))
-            app.update_database_names_to_new_version(after_rename=after_rename)
-
-        app.config['migrate_from_0_3_2'] = False
-        save_config(app.config)
-
 def get_app():
-    app = Stellar()
-    upgrade_from_old_version(app)
-    return app
+    return Stellar()
 
 
 @click.group()
@@ -49,7 +35,6 @@ def gc():
         click.echo("Deleted table %s" % database)
 
     app = get_app()
-    upgrade_from_old_version(app)
     app.delete_orphan_snapshots(after_delete)
 
 
@@ -58,7 +43,6 @@ def gc():
 def snapshot(name):
     """Takes a snapshot of the database"""
     app = get_app()
-    upgrade_from_old_version(app)
     name = name or app.default_snapshot_name
 
     if app.get_snapshot(name):

@@ -31,24 +31,24 @@ def terminate_database_connections(raw_conn, database):
         raw_conn.execute(
             sa.text(
                 '''
-                    SELECT pg_terminate_backend(pg_stat_activity.%(pid_column)s)
+                    SELECT pg_terminate_backend(pg_stat_activity.pid)
                     FROM pg_stat_activity
                     WHERE
                         pg_stat_activity.datname = :database AND
                         pid <> pg_backend_pid();
                 '''
             ),
-            database=database
+            {'database': database},
         )
     else:
-        # NotYetImplemented
-        pass
+        raise NotImplementedError()
 
 
-def create_database(raw_conn, database):
+def create_database(raw_conn, database, template='template0'):
     logger.debug('create_database(%r)', database)
     return sqlalchemy_utils.functions.create_database(
-        get_engine_url(raw_conn, database)
+        get_engine_url(raw_conn, database),
+        template=template,
     )
 
 
@@ -57,10 +57,7 @@ def copy_database(raw_conn, from_database, to_database):
     terminate_database_connections(raw_conn, from_database)
 
     if raw_conn.engine.dialect.name == 'postgresql':
-        sqlalchemy_utils.functions.create_database(
-            '%s%s' % (raw_conn.engine.url, to_database),
-            template=from_database
-        )
+        create_database(raw_conn, to_database, from_database)
     elif raw_conn.engine.dialect.name == 'mysql':
         # Horribly slow implementation.
         create_database(raw_conn, to_database)
